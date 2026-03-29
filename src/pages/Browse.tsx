@@ -22,7 +22,7 @@ export const Browse: React.FC = () => {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
 
-	const alphabet = "ABCDEẸFGHIJKLMNOPRSṢTUWYZ".split("");
+	const alphabet = ["A", "B", "D", "E", "Ẹ", "F", "G", "GB", "I", "J", "K", "L", "M", "N", "O", "Ọ", "P", "R", "S", "Ṣ", "T", "U", "W", "Y"];
 
 	useEffect(() => {
 		fetchEntries();
@@ -70,7 +70,7 @@ export const Browse: React.FC = () => {
 
 				<div className='relative w-full md:w-96'>
 					<Search
-						className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30'
+						className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30 z-10 pointer-events-none'
 						size={20}
 					/>
 					<input
@@ -84,8 +84,8 @@ export const Browse: React.FC = () => {
 			</div>
 
 			{/* Alphabet Filter */}
-			<div className='mb-12 overflow-x-auto pb-4 scrollbar-hide'>
-				<div className='flex flex-wrap space-x-2 min-w-max'>
+			<div className='mb-12'>
+				<div className='flex flex-wrap gap-2 justify-center'>
 					<button
 						onClick={() => setSelectedLetter(null)}
 						className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
@@ -96,8 +96,7 @@ export const Browse: React.FC = () => {
 					>
 						All
 					</button>
-               {alphabet.map((letter) => (
-                  
+					{alphabet.map((letter) => (
 						<button
 							key={letter}
 							onClick={() => setSelectedLetter(letter)}
@@ -108,8 +107,7 @@ export const Browse: React.FC = () => {
 							}`}
 						>
 							{letter}
-                     </button>
-                  
+						</button>
 					))}
 				</div>
 			</div>

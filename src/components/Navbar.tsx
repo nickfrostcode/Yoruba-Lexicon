@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Search, BookOpen, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { Menu, X, User, Search, BookOpen, LayoutDashboard, ShieldCheck, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -8,6 +8,7 @@ export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -15,12 +16,13 @@ export const Navbar: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       if (session?.user) {
-        const { data: profile } = await supabase
+        const { data: profileData } = await supabase
           .from('profiles')
-          .select('role')
+          .select('*')
           .eq('id', session.user.id)
           .single();
-        setRole(profile?.role ?? 'user');
+        setRole(profileData?.role ?? 'user');
+        setProfile(profileData);
       }
     };
 
@@ -29,14 +31,16 @@ export const Navbar: React.FC = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        const { data: profile } = await supabase
+        const { data: profileData } = await supabase
           .from('profiles')
-          .select('role')
+          .select('*')
           .eq('id', session.user.id)
           .single();
-        setRole(profile?.role ?? 'user');
+        setRole(profileData?.role ?? 'user');
+        setProfile(profileData);
       } else {
         setRole(null);
+        setProfile(null);
       }
     });
 
@@ -45,12 +49,19 @@ export const Navbar: React.FC = () => {
 
   const navLinks = [
     { name: 'Browse', path: '/browse', icon: BookOpen },
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   ];
+
+  if (user) {
+    navLinks.push({ name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard });
+  }
 
   if (role === 'admin') {
     navLinks.push({ name: 'Admin', path: '/admin', icon: ShieldCheck });
   }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-brand-cream/80 backdrop-blur-md border-b border-brand-ink/5">
@@ -77,12 +88,14 @@ export const Navbar: React.FC = () => {
               </Link>
             ))}
             {user ? (
-              <Link to="/dashboard" className="btn-primary py-2 px-5 text-sm">
-                My Contributions
-              </Link>
+              <button onClick={handleSignOut} className="btn-secondary py-2 px-5 text-sm flex items-center space-x-2">
+                <LogOut size={16} />
+                <span>Sign Out</span>
+              </button>
             ) : (
-              <Link to="/auth" className="btn-primary py-2 px-5 text-sm">
-                Sign In
+              <Link to="/auth" className="btn-primary py-2 px-5 text-sm flex items-center space-x-2">
+                <User size={16} />
+                <span>Sign In</span>
               </Link>
             )}
           </div>
@@ -122,20 +135,21 @@ export const Navbar: React.FC = () => {
               ))}
               <div className="pt-4">
                 {user ? (
-                  <Link
-                    to="/dashboard"
-                    onClick={() => setIsOpen(false)}
-                    className="btn-primary w-full text-center block"
+                  <button
+                    onClick={() => { setIsOpen(false); handleSignOut(); }}
+                    className="btn-secondary w-full text-center flex items-center justify-center space-x-2 py-3 rounded-xl"
                   >
-                    Dashboard
-                  </Link>
+                    <LogOut size={18} />
+                    <span>Sign Out</span>
+                  </button>
                 ) : (
                   <Link
                     to="/auth"
                     onClick={() => setIsOpen(false)}
-                    className="btn-primary w-full text-center block"
+                    className="btn-primary w-full text-center flex items-center justify-center space-x-2"
                   >
-                    Sign In
+                    <User size={18} />
+                    <span>Sign In</span>
                   </Link>
                 )}
               </div>

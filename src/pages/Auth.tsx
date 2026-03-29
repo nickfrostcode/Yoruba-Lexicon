@@ -3,22 +3,25 @@
 import React, { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, User, ArrowRight, Github, Twitter } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff, AtSign } from "lucide-react";
 import { motion } from "motion/react";
+import { toast } from "sonner";
 
 export const Auth: React.FC = () => {
 	const [isLogin, setIsLogin] = useState(true);
 	const [loading, setLoading] = useState(false);
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+	const [showPassword, setShowPassword] = useState(false);
+	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [fullName, setFullName] = useState("");
-	const [error, setError] = useState<string | null>(null);
+	const [username, setUsername] = useState("");
 	const navigate = useNavigate();
 
 	const handleAuth = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setLoading(true);
-		setError(null);
 
 		try {
 			if (isLogin) {
@@ -27,12 +30,16 @@ export const Auth: React.FC = () => {
 					password,
 				});
 				if (error) throw error;
+				toast.success("Successfully signed in!");
 			} else {
+				if (password !== confirmPassword) {
+					throw new Error("Passwords do not match.");
+				}
 				const { error, data } = await supabase.auth.signUp({
 					email,
 					password,
 					options: {
-						data: { full_name: fullName },
+						data: { full_name: fullName, username: username },
 					},
 				});
 				if (error) throw error;
@@ -41,14 +48,15 @@ export const Auth: React.FC = () => {
 				if (data.user) {
 					const { error: profileError } = await supabase
 						.from("profiles")
-						.insert([{ id: data.user.id, email, full_name: fullName }]);
+						.insert([{ id: data.user.id, email, full_name: fullName, username: username }]);
 					if (profileError)
 						console.error("Error creating profile:", profileError);
 				}
+				toast.success("Account created successfully!");
 			}
 			navigate("/dashboard");
 		} catch (err: any) {
-			setError(err.message || "An error occurred during authentication.");
+			toast.error(err.message || "An error occurred during authentication.");
 		} finally {
 			setLoading(false);
 		}
@@ -71,25 +79,46 @@ export const Auth: React.FC = () => {
 				<div className='glass-card p-8 rounded-3xl border border-brand-ink/5 shadow-2xl'>
 					<form onSubmit={handleAuth} className='space-y-6'>
 						{!isLogin && (
-							<div className='space-y-2'>
-								<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-									Full Name
-								</label>
-								<div className='relative'>
-									<User
-										size={18}
-										className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30'
-									/>
-									<input
-										type='text'
-										placeholder='Olúwaṣeun Adébáyọ̀'
-										className='input-field pl-12'
-										value={fullName}
-										onChange={(e) => setFullName(e.target.value)}
-										required={!isLogin}
-									/>
+							<>
+								<div className='space-y-2'>
+									<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+										Full Name
+									</label>
+									<div className='relative'>
+										<User
+											size={18}
+											className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30 z-10 pointer-events-none'
+										/>
+										<input
+											type='text'
+											placeholder='Olúwaṣeun Adébáyọ̀'
+											className='input-field pl-12'
+											value={fullName}
+											onChange={(e) => setFullName(e.target.value)}
+											required={!isLogin}
+										/>
+									</div>
 								</div>
-							</div>
+								<div className='space-y-2'>
+									<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+										Username
+									</label>
+									<div className='relative'>
+										<AtSign
+											size={18}
+											className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30 z-10 pointer-events-none'
+										/>
+										<input
+											type='text'
+											placeholder='seun_lexicon'
+											className='input-field pl-12'
+											value={username}
+											onChange={(e) => setUsername(e.target.value)}
+											required={!isLogin}
+										/>
+									</div>
+								</div>
+							</>
 						)}
 
 						<div className='space-y-2'>
@@ -99,7 +128,7 @@ export const Auth: React.FC = () => {
 							<div className='relative'>
 								<Mail
 									size={18}
-									className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30'
+									className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30 z-10 pointer-events-none'
 								/>
 								<input
 									type='email'
@@ -119,22 +148,65 @@ export const Auth: React.FC = () => {
 							<div className='relative'>
 								<Lock
 									size={18}
-									className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30'
+									className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30 z-10 pointer-events-none'
 								/>
 								<input
-									type='password'
+									type={showPassword ? 'text' : 'password'}
 									placeholder='••••••••'
-									className='input-field pl-12'
+									className='input-field pl-12 pr-12'
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
 									required
 								/>
+								<button
+									type="button"
+									onClick={() => setShowPassword(!showPassword)}
+									className='absolute right-4 top-1/2 -translate-y-1/2 text-brand-ink/30 hover:text-brand-ink/60 transition-colors z-10'
+								>
+									{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+								</button>
 							</div>
 						</div>
 
-						{error && (
-							<div className='p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm'>
-								{error}
+						{!isLogin && (
+							<div className='space-y-2'>
+								<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+									Confirm Password
+								</label>
+								<div className='relative'>
+									<Lock
+										size={18}
+										className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30 z-10 pointer-events-none'
+									/>
+									<input
+										type={showConfirmPassword ? 'text' : 'password'}
+										placeholder='••••••••'
+										className='input-field pl-12 pr-12'
+										value={confirmPassword}
+										onChange={(e) => setConfirmPassword(e.target.value)}
+										required={!isLogin}
+									/>
+									<button
+										type="button"
+										onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+										className='absolute right-4 top-1/2 -translate-y-1/2 text-brand-ink/30 hover:text-brand-ink/60 transition-colors z-10'
+									>
+										{showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+									</button>
+								</div>
+								{confirmPassword.length > 0 && (
+									<p
+										className={`text-xs font-medium ml-1 ${
+											password === confirmPassword
+												? "text-green-600"
+												: "text-red-500"
+										}`}
+									>
+										{password === confirmPassword
+											? "Passwords match"
+											: "Passwords do not match"}
+									</p>
+								)}
 							</div>
 						)}
 
@@ -154,19 +226,6 @@ export const Auth: React.FC = () => {
 						</button>
 					</form>
 
-					<div className='mt-8 pt-8 border-t border-brand-ink/5 text-center'>
-						<p className='text-brand-ink/60 text-sm mb-6'>
-							Or continue with
-						</p>
-						<div className='flex justify-center space-x-4'>
-							<button className='p-3 rounded-xl border border-brand-ink/10 hover:bg-brand-ink/5 transition-colors'>
-								<Github size={20} />
-							</button>
-							<button className='p-3 rounded-xl border border-brand-ink/10 hover:bg-brand-ink/5 transition-colors'>
-								<Twitter size={20} />
-							</button>
-						</div>
-					</div>
 				</div>
 
 				<div className='mt-8 text-center'>

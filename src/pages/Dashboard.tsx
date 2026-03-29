@@ -7,7 +7,6 @@ import {
 	Clock,
 	CheckCircle,
 	AlertCircle,
-	LogOut,
 	User,
 	Trash2,
 	Edit3,
@@ -71,11 +70,6 @@ export const Dashboard: React.FC = () => {
 		setLoading(false);
 	};
 
-	const handleSignOut = async () => {
-		await supabase.auth.signOut();
-		navigate("/");
-	};
-
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setLoading(true);
@@ -133,13 +127,6 @@ export const Dashboard: React.FC = () => {
 							<User size={18} />
 							<span className='font-medium'>{user?.email}</span>
 						</div>
-						<button
-							onClick={handleSignOut}
-							className='flex items-center space-x-2 text-red-500 hover:text-red-600 transition-colors text-sm font-bold uppercase tracking-widest btn-secondary'
-						>
-							<LogOut size={16} />
-							<span>Sign Out</span>
-						</button>
 					</div>
 				</div>
 
