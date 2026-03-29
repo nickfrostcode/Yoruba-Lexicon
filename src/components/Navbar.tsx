@@ -1,21 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Search, BookOpen, LayoutDashboard } from 'lucide-react';
+import { Menu, X, User, Search, BookOpen, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<string | null>(null);
   const location = useLocation();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const fetchSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
-    });
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        setRole(profile?.role ?? 'user');
+      }
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    fetchSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        setRole(profile?.role ?? 'user');
+      } else {
+        setRole(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -25,6 +47,10 @@ export const Navbar: React.FC = () => {
     { name: 'Browse', path: '/browse', icon: BookOpen },
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   ];
+
+  if (role === 'admin') {
+    navLinks.push({ name: 'Admin', path: '/admin', icon: ShieldCheck });
+  }
 
   return (
     <nav className="sticky top-0 z-50 bg-brand-cream/80 backdrop-blur-md border-b border-brand-ink/5">

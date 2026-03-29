@@ -10,6 +10,7 @@ import { Landing } from './pages/Landing';
 import { Browse } from './pages/Browse';
 import { Dashboard } from './pages/Dashboard';
 import { Auth } from './pages/Auth';
+import { Admin } from './pages/Admin';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/browse" element={<Browse />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
