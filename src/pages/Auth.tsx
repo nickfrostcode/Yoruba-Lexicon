@@ -3,7 +3,15 @@
 import React, { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, User, ArrowRight, Eye, EyeOff, AtSign } from "lucide-react";
+import {
+	Mail,
+	Lock,
+	User,
+	ArrowRight,
+	Eye,
+	EyeOff,
+	AtSign,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { AuthError } from "@supabase/supabase-js";
@@ -49,7 +57,14 @@ export const Auth: React.FC = () => {
 				if (data.user) {
 					const { error: profileError } = await supabase
 						.from("profiles")
-						.insert([{ id: data.user.id, email, full_name: fullName, username: username }]);
+						.insert([
+							{
+								id: data.user.id,
+								email,
+								full_name: fullName,
+								username: username,
+							},
+						]);
 					if (profileError)
 						console.error("Error creating profile:", profileError);
 				}
@@ -58,7 +73,9 @@ export const Auth: React.FC = () => {
 			navigate("/dashboard");
 		} catch (err: unknown) {
 			if (err instanceof AuthError || err instanceof Error) {
-				toast.error(err.message || "An error occurred during authentication.");
+				toast.error(
+					err.message || "An error occurred during authentication.",
+				);
 			} else {
 				toast.error("An error occurred during authentication.");
 			}
@@ -156,7 +173,7 @@ export const Auth: React.FC = () => {
 									className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30 z-10 pointer-events-none'
 								/>
 								<input
-									type={showPassword ? 'text' : 'password'}
+									type={showPassword ? "text" : "password"}
 									placeholder='••••••••'
 									className='input-field pl-12 pr-12'
 									value={password}
@@ -164,11 +181,15 @@ export const Auth: React.FC = () => {
 									required
 								/>
 								<button
-									type="button"
+									type='button'
 									onClick={() => setShowPassword(!showPassword)}
 									className='absolute right-4 top-1/2 -translate-y-1/2 text-brand-ink/30 hover:text-brand-ink/60 transition-colors z-10'
 								>
-									{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+									{showPassword ? (
+										<EyeOff size={18} />
+									) : (
+										<Eye size={18} />
+									)}
 								</button>
 							</div>
 						</div>
@@ -184,19 +205,27 @@ export const Auth: React.FC = () => {
 										className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30 z-10 pointer-events-none'
 									/>
 									<input
-										type={showConfirmPassword ? 'text' : 'password'}
+										type={showConfirmPassword ? "text" : "password"}
 										placeholder='••••••••'
 										className='input-field pl-12 pr-12'
 										value={confirmPassword}
-										onChange={(e) => setConfirmPassword(e.target.value)}
+										onChange={(e) =>
+											setConfirmPassword(e.target.value)
+										}
 										required={!isLogin}
 									/>
 									<button
-										type="button"
-										onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+										type='button'
+										onClick={() =>
+											setShowConfirmPassword(!showConfirmPassword)
+										}
 										className='absolute right-4 top-1/2 -translate-y-1/2 text-brand-ink/30 hover:text-brand-ink/60 transition-colors z-10'
 									>
-										{showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+										{showConfirmPassword ? (
+											<EyeOff size={18} />
+										) : (
+											<Eye size={18} />
+										)}
 									</button>
 								</div>
 								{confirmPassword.length > 0 && (
@@ -230,7 +259,6 @@ export const Auth: React.FC = () => {
 							{!loading && <ArrowRight size={18} />}
 						</button>
 					</form>
-
 				</div>
 
 				<div className='mt-8 text-center'>
