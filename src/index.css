@@ -5,7 +5,8 @@
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Newsreader", ui-serif, Georgia, serif;
 
-  --color-brand-orange: #FF6321;
+  --color-brand-orange: #FF6321; 
+  /* #8B3A2A */
   --color-brand-cream: #F5F2ED;
   --color-brand-ink: #1A1A1A;
   --color-brand-gray: #8E8E8E;
@@ -29,13 +30,43 @@
 }
 
 .btn-primary {
-  @apply bg-brand-orange text-white px-6 py-3 rounded-full font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  @apply bg-brand-orange text-white px-6 py-3 rounded-full font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer;
 }
 
 .btn-secondary {
-  @apply border border-brand-ink/20 text-brand-ink px-6 py-3 rounded-full font-medium transition-all hover:bg-brand-ink/5 active:scale-95;
+  @apply border border-brand-ink/20 text-brand-ink px-6 py-3 rounded-full font-medium transition-all hover:bg-brand-ink/5 active:scale-95 cursor-pointer;
 }
+
+.btn-accent {
+   @apply border border-brand-cream/20 text-brand-cream px-6 py-3 rounded-full font-medium transition-all hover:bg-brand-cream/5 active:scale-95 cursor-pointer;}
 
 .input-field {
   @apply w-full bg-white/50 border border-brand-ink/10 rounded-xl px-4 py-3 outline-none transition-all focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20;
+}
+
+.hero-bg {
+   position: relative;
+   overflow: hidden;
+   min-height: 400px;
+   /* Or whatever height you need */
+}
+
+.hero-bg::before {
+   content: "";
+   position: absolute;
+   top: 0;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   background-image:
+      linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2)),
+      url("./assets/hero-bg.jpg");
+   background-size: cover;
+   background-position: center;
+
+   /* Apply the blur here */
+   filter: blur(8px);
+   /* Scale up slightly to hide the un-blurred edges caused by the filter */
+   transform: scale(1.1);
+   z-index: -1;
 }
