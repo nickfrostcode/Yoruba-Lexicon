@@ -207,7 +207,7 @@ export const Admin: React.FC = () => {
 					<select
 						className='input-field min-w-[150px]'
 						value={filter}
-						onChange={(e) => setFilter(e.target.value as any)}
+						onChange={(e) => setFilter(e.target.value as "all" | "pending" | "approved")}
 					>
 						<option value='pending'>Pending</option>
 						<option value='approved'>Approved</option>

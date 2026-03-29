@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User, Search, BookOpen, LayoutDashboard, ShieldCheck, LogOut } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, Database } from '../lib/supabase';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'motion/react';
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [role, setRole] = useState<string | null>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const location = useLocation();
 
   useEffect(() => {

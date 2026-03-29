@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Mail, Lock, User, ArrowRight, Eye, EyeOff, AtSign } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
+import { AuthError } from "@supabase/supabase-js";
 
 export const Auth: React.FC = () => {
 	const [isLogin, setIsLogin] = useState(true);
@@ -55,8 +56,12 @@ export const Auth: React.FC = () => {
 				toast.success("Account created successfully!");
 			}
 			navigate("/dashboard");
-		} catch (err: any) {
-			toast.error(err.message || "An error occurred during authentication.");
+		} catch (err: unknown) {
+			if (err instanceof AuthError || err instanceof Error) {
+				toast.error(err.message || "An error occurred during authentication.");
+			} else {
+				toast.error("An error occurred during authentication.");
+			}
 		} finally {
 			setLoading(false);
 		}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 import {
 	Plus,
 	Clock,
@@ -25,7 +26,7 @@ interface Contribution {
 }
 
 export const Dashboard: React.FC = () => {
-	const [user, setUser] = useState<any>(null);
+	const [user, setUser] = useState<SupabaseUser | null>(null);
 	const [contributions, setContributions] = useState<Contribution[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [isAdding, setIsAdding] = useState(false);
@@ -72,6 +73,7 @@ export const Dashboard: React.FC = () => {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (!user) return;
 		setLoading(true);
 		try {
 			const { error } = await supabase.from("lexicon_entries").insert([
