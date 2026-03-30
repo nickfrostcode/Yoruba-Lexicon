@@ -16,20 +16,23 @@ import { Browse } from "./pages/Browse";
 import { Dashboard } from "./pages/Dashboard";
 import { Auth } from "./pages/Auth";
 import { Admin } from "./pages/Admin";
+import { AuthProvider } from "./context/AuthContext";
 
 export default function App() {
 	return (
-		<Router>
-			<Layout>
-				<Routes>
-					<Route path='/' element={<Landing />} />
-					<Route path='/browse' element={<Browse />} />
-					<Route path='/dashboard' element={<Dashboard />} />
-					<Route path='/admin' element={<Admin />} />
-					<Route path='/auth' element={<Auth />} />
-					<Route path='*' element={<Navigate to='/' replace />} />
-				</Routes>
-			</Layout>
-		</Router>
+		<AuthProvider>
+			<Router>
+				<Layout>
+					<Routes>
+						<Route path='/' element={<Landing />} />
+						<Route path='/browse' element={<Browse />} />
+						<Route path='/dashboard' element={<Dashboard />} />
+						<Route path='/admin' element={<Admin />} />
+						<Route path='/auth' element={<Auth />} />
+						<Route path='*' element={<Navigate to='/' replace />} />
+					</Routes>
+				</Layout>
+			</Router>
+		</AuthProvider>
 	);
 }

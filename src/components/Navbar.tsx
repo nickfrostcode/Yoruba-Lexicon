@@ -25,6 +25,7 @@ export const Navbar: React.FC = () => {
 	const [profile, setProfile] = useState<Profile | null>(null);
 	const location = useLocation();
 	const navigate = useNavigate();
+	// const { user } = useAuth();
 
 	useEffect(() => {
 		const fetchSession = async () => {
@@ -82,6 +83,9 @@ export const Navbar: React.FC = () => {
 
 	const handleSignOut = async () => {
 		await supabase.auth.signOut();
+		setRole(null);
+		setProfile(null);
+		setUser(null);
 		navigate("/");
 	};
 

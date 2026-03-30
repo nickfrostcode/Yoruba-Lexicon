@@ -207,7 +207,9 @@ export const Admin: React.FC = () => {
 					<select
 						className='input-field min-w-[150px]'
 						value={filter}
-						onChange={(e) => setFilter(e.target.value as "all" | "pending" | "approved")}
+						onChange={(e) =>
+							setFilter(e.target.value as "all" | "pending" | "approved")
+						}
 					>
 						<option value='pending'>Pending</option>
 						<option value='approved'>Approved</option>
@@ -387,11 +389,26 @@ export const Admin: React.FC = () => {
 											})
 										}
 									>
-										<option value='noun'>Noun</option>
-										<option value='verb'>Verb</option>
-										<option value='adjective'>Adjective</option>
-										<option value='adverb'>Adverb</option>
-										<option value='phrase'>Phrase</option>
+										<option value='noun'>Orúkọ (Noun)</option>
+										<option value='pronoun'>
+											Àrọ̀pò orúkọ (Pronoun)
+										</option>
+										<option value='verb'>Òrò ìṣe (Verb)</option>
+										<option value='adjective'>
+											Àpèjúwe (Adjective)
+										</option>
+										<option value='adverb'>
+											Àrọ̀pò òrò ìṣe (Adverb)
+										</option>
+										<option value='conjunction'>
+											Òrò àsopò (Conjunction)
+										</option>
+										<option value='preposition'>
+											Òrò ìbáṣepọ̀ (Preposition)
+										</option>
+										<option value='pronominal'>
+											Àrọ̀pò orúkọ àfikún (Pronominal)
+										</option>
 									</select>
 								</div>
 
