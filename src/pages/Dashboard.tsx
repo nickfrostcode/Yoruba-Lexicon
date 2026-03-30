@@ -144,65 +144,74 @@ export const Dashboard: React.FC = () => {
 			<div className='grid grid-cols-1 lg:grid-cols-3 gap-12'>
 				{/* Stats Column */}
 				<div className='lg:col-span-1 space-y-8'>
-					<div className='glass-card p-8 rounded-3xl border border-brand-ink/5 shadow-xl'>
-						<h3 className='text-xl font-serif font-bold mb-6'>
-							Your Impact
-						</h3>
-						<div className='space-y-6'>
-							<StatItem
-								icon={
-									<CheckCircle size={20} className='text-green-500' />
-								}
-								label='Approved'
-								value={
-									contributions.filter((c) => c.status === "approved")
-										.length
-								}
-							/>
-							<StatItem
-								icon={<Clock size={20} className='text-brand-orange' />}
-								label='Pending'
-								value={
-									contributions.filter((c) => c.status === "pending")
-										.length
-								}
-							/>
-							<StatItem
-								icon={
-									<AlertCircle
-										size={20}
-										className='text-brand-ink/20'
-									/>
-								}
-								label='Total Contributions'
-								value={contributions.length}
-							/>
+					<div className='lg:sticky flex flex-col gap-5 top-23'>
+						<div className='glass-card p-8 rounded-3xl border border-brand-ink/5 shadow-xl'>
+							<h3 className='text-xl font-serif font-bold mb-6'>
+								Your Impact
+							</h3>
+							<div className='space-y-6'>
+								<StatItem
+									icon={
+										<CheckCircle
+											size={20}
+											className='text-green-500'
+										/>
+									}
+									label='Approved'
+									value={
+										contributions.filter(
+											(c) => c.status === "approved",
+										).length
+									}
+								/>
+								<StatItem
+									icon={
+										<Clock size={20} className='text-brand-orange' />
+									}
+									label='Pending'
+									value={
+										contributions.filter(
+											(c) => c.status === "pending",
+										).length
+									}
+								/>
+								<StatItem
+									icon={
+										<AlertCircle
+											size={20}
+											className='text-brand-ink/20'
+										/>
+									}
+									label='Total Contributions'
+									value={contributions.length}
+								/>
+							</div>
 						</div>
-					</div>
 
-					<div className='p-8 rounded-3xl bg-brand-orange text-white'>
-						<h3 className='text-xl font-serif font-bold mb-4'>
-							Contributor Guide
-						</h3>
-						<p className='text-white/80 text-sm leading-relaxed mb-6'>
-							Ensure your entries follow the standard Yorùbá orthography.
-							Include diacritics where necessary to maintain phonetic
-							accuracy.
-						</p>
-						<ul className='space-y-3 text-sm font-medium'>
-							<li className='flex items-center space-x-2'>
-								<div className='w-1.5 h-1.5 bg-white rounded-full' />
-								<span>Use correct tone marks (à, á, a)</span>
-							</li>
-							<li className='flex items-center space-x-2'>
-								<div className='w-1.5 h-1.5 bg-white rounded-full' />
-								<span>Provide clear, concise definitions</span>
-							</li>
-							<li className='flex items-center space-x-2'>
-								<div className='w-1.5 h-1.5 bg-white rounded-full' />
-								<span>Include usage examples</span>
-							</li>
-						</ul>
+						<div className='p-8 rounded-3xl bg-brand-orange text-white'>
+							<h3 className='text-xl font-serif font-bold mb-4'>
+								Contributor Guide
+							</h3>
+							<p className='text-white/80 text-sm leading-relaxed mb-6'>
+								Ensure your entries follow the standard Yorùbá
+								orthography. Include diacritics where necessary to
+								maintain phonetic accuracy.
+							</p>
+							<ul className='space-y-3 text-sm font-medium'>
+								<li className='flex items-center space-x-2'>
+									<div className='w-1.5 h-1.5 bg-white rounded-full' />
+									<span>Use correct tone marks (à, á, a)</span>
+								</li>
+								<li className='flex items-center space-x-2'>
+									<div className='w-1.5 h-1.5 bg-white rounded-full' />
+									<span>Provide clear, concise definitions</span>
+								</li>
+								<li className='flex items-center space-x-2'>
+									<div className='w-1.5 h-1.5 bg-white rounded-full' />
+									<span>Include usage examples</span>
+								</li>
+							</ul>
+						</div>
 					</div>
 				</div>
 
@@ -211,13 +220,13 @@ export const Dashboard: React.FC = () => {
 					<h3 className='text-2xl font-serif font-bold mb-8'>
 						Recent Contributions
 					</h3>
-					<div className='space-y-6'>
+					<div className='space-y-3'>
 						<AnimatePresence mode='popLayout'>
 							{loading ? (
 								Array.from({ length: 3 }).map((_, i) => (
 									<div
 										key={i}
-										className='h-32 rounded-2xl bg-white/30 animate-pulse border border-brand-ink/5'
+										className='h-32 rounded-xl bg-white/30 animate-pulse border border-brand-ink/5'
 									/>
 								))
 							) : contributions.length > 0 ? (
@@ -228,7 +237,7 @@ export const Dashboard: React.FC = () => {
 										initial={{ opacity: 0, x: -20 }}
 										animate={{ opacity: 1, x: 0 }}
 										exit={{ opacity: 0, x: 20 }}
-										className='glass-card p-6 rounded-2xl border border-brand-ink/5 flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0'
+										className='glass-card p-6 rounded-xl border border-brand-ink/5 flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0'
 									>
 										<div>
 											<div className='flex items-center space-x-3 mb-2'>
