@@ -1,6 +1,5 @@
 /** @format */
 
-import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Search, Book, Users, ShieldCheck, ArrowRight } from "lucide-react";

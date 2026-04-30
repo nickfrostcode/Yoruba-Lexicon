@@ -1,8 +1,8 @@
 /** @format */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { User as SupabaseUser } from "@supabase/supabase-js";
+import { useAuth } from "../context/AuthContext";
 import {
 	Plus,
 	Clock,
@@ -10,7 +10,6 @@ import {
 	AlertCircle,
 	User,
 	Trash2,
-	Edit3,
 	Save,
 	X,
 } from "lucide-react";
@@ -26,7 +25,7 @@ interface Contribution {
 }
 
 export const Dashboard: React.FC = () => {
-	const [user, setUser] = useState<SupabaseUser | null>(null);
+	const { user } = useAuth();
 	const [contributions, setContributions] = useState<Contribution[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [isAdding, setIsAdding] = useState(false);
@@ -41,19 +40,10 @@ export const Dashboard: React.FC = () => {
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		const checkUser = async () => {
-			const {
-				data: { session },
-			} = await supabase.auth.getSession();
-			if (!session) {
-				navigate("/auth");
-			} else {
-				setUser(session.user);
-				fetchContributions(session.user.id);
-			}
-		};
-		checkUser();
-	}, [navigate]);
+		if (user) {
+			fetchContributions(user.id);
+		}
+	}, [user]);
 
 	const fetchContributions = async (userId: string) => {
 		setLoading(true);
@@ -306,7 +296,7 @@ export const Dashboard: React.FC = () => {
 			{/* Add Entry Modal */}
 			<AnimatePresence>
 				{isAdding && (
-					<div className='fixed inset-0 z-[100] flex items-center justify-center p-4'>
+					<div className='fixed inset-0 z-100 flex items-center justify-center p-4'>
 						<motion.div
 							initial={{ opacity: 0 }}
 							animate={{ opacity: 1 }}

@@ -1,8 +1,8 @@
 /** @format */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { Search, Filter, ChevronRight, Volume2, BookOpen } from "lucide-react";
+import { Search, ChevronRight, Volume2, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface Entry {

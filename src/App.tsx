@@ -1,9 +1,6 @@
-/**
- * @format
- * @license SPDX-License-Identifier: Apache-2.0
- */
+/** @format */
 
-import React from "react";
+// src/App.tsx
 import {
 	BrowserRouter as Router,
 	Routes,
@@ -17,6 +14,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { Auth } from "./pages/Auth";
 import { Admin } from "./pages/Admin";
 import { AuthProvider } from "./context/AuthContext";
+import { ProtectedRoute } from "./lib/ProtectedRoute";
 
 export default function App() {
 	return (
@@ -24,11 +22,18 @@ export default function App() {
 			<Router>
 				<Layout>
 					<Routes>
+						{/* Public Routes */}
 						<Route path='/' element={<Landing />} />
 						<Route path='/browse' element={<Browse />} />
-						<Route path='/dashboard' element={<Dashboard />} />
-						<Route path='/admin' element={<Admin />} />
 						<Route path='/auth' element={<Auth />} />
+
+						{/* Protected Routes Wrapper */}
+						<Route element={<ProtectedRoute />}>
+							<Route path='/dashboard' element={<Dashboard />} />
+							<Route path='/admin' element={<Admin />} />
+						</Route>
+
+						{/* Fallback Route */}
 						<Route path='*' element={<Navigate to='/' replace />} />
 					</Routes>
 				</Layout>

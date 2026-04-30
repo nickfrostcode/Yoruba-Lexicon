@@ -2,49 +2,54 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Newsreader", ui-serif, Georgia, serif;
+   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+   --font-serif: "Newsreader", ui-serif, Georgia, serif;
 
-  --color-brand-orange: #FF6321; 
-  /* #8B3A2A */
-  --color-brand-cream: #F5F2ED;
-  --color-brand-ink: #1A1A1A;
-  --color-brand-gray: #8E8E8E;
+   --color-brand-orange: #FF6321;
+   /* #8B3A2A */
+   --color-brand-cream: #F5F2ED;
+   --color-brand-ink: #1A1A1A;
+   --color-brand-gray: #8E8E8E;
 
-  --radius-xl: 1.5rem;
-  --radius-2xl: 2rem;
+   --radius-xl: 1.5rem;
+   --radius-2xl: 2rem;
 }
 
 @layer base {
-  body {
-    @apply bg-brand-cream text-brand-ink font-sans antialiased;
-  }
+   body {
+      @apply bg-brand-cream text-brand-ink font-sans antialiased;
+   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-serif;
-  }
+   h1,
+   h2,
+   h3,
+   h4,
+   h5,
+   h6 {
+      @apply font-serif;
+   }
 }
 
 @layer components {
-  .glass-card {
-    @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-sm;
-  }
+   .glass-card {
+      @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-sm;
+   }
 
-  .btn-primary {
-    @apply bg-brand-orange text-white px-6 py-3 rounded-full font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer;
-  }
+   .btn-primary {
+      @apply bg-brand-orange text-white px-6 py-3 rounded-full font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer;
+   }
 
-  .btn-secondary {
-    @apply border border-brand-ink/20 text-brand-ink px-6 py-3 rounded-full font-medium transition-all hover:bg-brand-ink/5 active:scale-95 cursor-pointer;
-  }
+   .btn-secondary {
+      @apply border border-brand-ink/20 text-brand-ink px-6 py-3 rounded-full font-medium transition-all hover:bg-brand-ink/5 active:scale-95 cursor-pointer;
+   }
 
-  .btn-accent {
-     @apply border border-brand-cream/20 text-brand-cream px-6 py-3 rounded-full font-medium transition-all hover:bg-brand-cream/5 active:scale-95 cursor-pointer;
-  }
+   .btn-accent {
+      @apply border border-brand-cream/20 text-brand-cream px-6 py-3 rounded-full font-medium transition-all hover:bg-brand-cream/5 active:scale-95 cursor-pointer;
+   }
 
-  .input-field {
-    @apply w-full bg-white/50 border border-brand-ink/10 rounded-xl px-4 py-3 outline-none transition-all focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20;
-  }
+   .input-field {
+      @apply w-full bg-white/50 border border-brand-ink/10 rounded-xl px-4 py-3 outline-none transition-all focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20;
+   }
 }
 
 .hero-bg {
@@ -68,7 +73,7 @@
    background-position: center;
 
    /* Apply the blur here */
-   filter: blur(8px);
+   /* filter: blur(1px); */
    /* Scale up slightly to hide the un-blurred edges caused by the filter */
    transform: scale(1.1);
    z-index: -1;

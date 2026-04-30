@@ -1,10 +1,9 @@
 /** @format */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import {
 	CheckCircle,
-	XCircle,
 	Edit3,
 	Trash2,
 	Filter,
@@ -12,7 +11,6 @@ import {
 	ShieldAlert,
 	Save,
 	X,
-	ChevronRight,
 	Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -204,8 +202,8 @@ export const Admin: React.FC = () => {
 							onChange={(e) => setSearchTerm(e.target.value)}
 						/>
 					</div>
-					<select
-						className='input-field min-w-[150px]'
+					<select title="status"
+						className='input-field min-w-37.5'
 						value={filter}
 						onChange={(e) =>
 							setFilter(e.target.value as "all" | "pending" | "approved")
@@ -230,7 +228,7 @@ export const Admin: React.FC = () => {
 							className='glass-card p-6 rounded-2xl border border-brand-ink/5 hover:border-brand-orange/20 transition-all'
 						>
 							<div className='flex flex-col lg:flex-row justify-between gap-6'>
-								<div className='flex-grow'>
+								<div className='grow'>
 									<div className='flex items-center space-x-3 mb-2'>
 										<h3 className='text-2xl font-serif font-bold'>
 											{entry.word}
@@ -309,7 +307,7 @@ export const Admin: React.FC = () => {
 			{/* Edit Modal */}
 			<AnimatePresence>
 				{editingEntry && (
-					<div className='fixed inset-0 z-[100] flex items-center justify-center p-4'>
+					<div className='fixed inset-0 z-100 flex items-center justify-center p-4'>
 						<motion.div
 							initial={{ opacity: 0 }}
 							animate={{ opacity: 1 }}

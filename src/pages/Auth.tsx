@@ -1,6 +1,6 @@
 /** @format */
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,7 +12,6 @@ import {
 	EyeOff,
 	AtSign,
 } from "lucide-react";
-import { motion } from "motion/react";
 import { toast } from "sonner";
 import { AuthError } from "@supabase/supabase-js";
 
