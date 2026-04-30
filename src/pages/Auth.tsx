@@ -24,7 +24,6 @@ export const Auth: React.FC = () => {
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [fullName, setFullName] = useState("");
-	const [username, setUsername] = useState("");
 	const navigate = useNavigate();
 
 	const handleAuth = async (e: React.FormEvent) => {
@@ -47,7 +46,7 @@ export const Auth: React.FC = () => {
 					email,
 					password,
 					options: {
-						data: { full_name: fullName, username: username },
+						data: { full_name: fullName},
 					},
 				});
 				if (error) throw error;
@@ -61,7 +60,6 @@ export const Auth: React.FC = () => {
 								id: data.user.id,
 								email,
 								full_name: fullName,
-								username: username,
 							},
 						]);
 					if (profileError)
@@ -120,7 +118,7 @@ export const Auth: React.FC = () => {
 										/>
 									</div>
 								</div>
-								<div className='space-y-2'>
+								{/* <div className='space-y-2'>
 									<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
 										Username
 									</label>
@@ -138,7 +136,7 @@ export const Auth: React.FC = () => {
 											required={!isLogin}
 										/>
 									</div>
-								</div>
+								</div> */}
 							</>
 						)}
 

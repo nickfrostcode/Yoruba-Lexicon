@@ -16,6 +16,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "sonner";
 
 interface Entry {
 	id: string;
@@ -75,7 +76,7 @@ export const Admin: React.FC = () => {
 			.eq("id", id);
 
 		if (error) {
-			alert("Error approving entry");
+			toast.error("Error approving entry");
 		} else {
 			setEntries(
 				entries.map((e) =>
@@ -102,7 +103,7 @@ export const Admin: React.FC = () => {
 			.eq("id", editingEntry.id);
 
 		if (error) {
-			alert("Error updating entry");
+			toast.error("Error updating entry");
 		} else {
 			setEntries(
 				entries.map((e) => (e.id === editingEntry.id ? editingEntry : e)),
@@ -120,7 +121,7 @@ export const Admin: React.FC = () => {
 			.eq("id", id);
 
 		if (error) {
-			alert("Error deleting entry");
+			toast.error("Error deleting entry");
 		} else {
 			setEntries(entries.filter((e) => e.id !== id));
 		}

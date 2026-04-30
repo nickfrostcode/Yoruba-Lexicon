@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface Contribution {
 	id: string;
@@ -86,7 +87,7 @@ export const Dashboard: React.FC = () => {
 			});
 			fetchContributions(user.id);
 		} catch (err: any) {
-			alert(err.message || "Error submitting entry.");
+			toast.error(err.message || "Error submitting entry.");
 		} finally {
 			setLoading(false);
 		}
@@ -101,7 +102,7 @@ export const Dashboard: React.FC = () => {
 			.delete()
 			.eq("id", id);
 		if (error) {
-			alert("Error deleting entry.");
+			toast.error("Error deleting entry.");
 		} else if (user) {
 			fetchContributions(user.id);
 		}
