@@ -102,7 +102,7 @@ export const Dashboard: React.FC = () => {
 			.eq("id", id);
 		if (error) {
 			alert("Error deleting entry.");
-		} else {
+		} else if (user) {
 			fetchContributions(user.id);
 		}
 	};

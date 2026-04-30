@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 interface Entry {
 	id: string;
@@ -30,9 +31,9 @@ interface Entry {
 }
 
 export const Admin: React.FC = () => {
+	const { user, isAdmin, loading: authLoading } = useAuth();
 	const [entries, setEntries] = useState<Entry[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 	const [filter, setFilter] = useState<"all" | "pending" | "approved">(
 		"pending",
 	);
@@ -41,32 +42,15 @@ export const Admin: React.FC = () => {
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		checkAdmin();
-	}, []);
-
-	const checkAdmin = async () => {
-		const {
-			data: { session },
-		} = await supabase.auth.getSession();
-		if (!session) {
+		if (authLoading) return;
+		if (!user) {
 			navigate("/auth");
-			return;
+		} else if (isAdmin) {
+			fetchEntries();
+		} else {
+			setLoading(false);
 		}
-
-		const { data: profile } = await supabase
-			.from("profiles")
-			.select("role")
-			.eq("id", session.user.id)
-			.single();
-
-		if (profile?.role !== "admin") {
-			setIsAdmin(false);
-			return;
-		}
-
-		setIsAdmin(true);
-		fetchEntries();
-	};
+	}, [user, isAdmin, authLoading, navigate]);
 
 	const fetchEntries = async () => {
 		setLoading(true);
@@ -150,7 +134,7 @@ export const Admin: React.FC = () => {
 		return matchesFilter && matchesSearch;
 	});
 
-	if (isAdmin === false) {
+	if (!isAdmin && !authLoading) {
 		return (
 			<div className='max-w-7xl mx-auto px-4 py-24 text-center'>
 				<ShieldAlert size={64} className='mx-auto text-red-500 mb-6' />
@@ -167,7 +151,7 @@ export const Admin: React.FC = () => {
 		);
 	}
 
-	if (isAdmin === null || loading) {
+	if (authLoading || loading) {
 		return (
 			<div className='max-w-7xl mx-auto px-4 py-24 text-center'>
 				<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-brand-orange mx-auto'></div>
