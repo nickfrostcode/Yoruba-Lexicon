@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { Search, ChevronRight, Volume2, BookOpen } from "lucide-react";
+import {
+	Search,
+	ChevronRight,
+	ChevronLeft,
+	Volume2,
+	BookOpen,
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface Entry {
@@ -16,11 +22,14 @@ interface Entry {
 	status: "pending" | "approved";
 }
 
+const ITEMS_PER_PAGE = 12; // divisible by 3, 2, and 1 — fits all grid layouts
+
 export const Browse: React.FC = () => {
 	const [entries, setEntries] = useState<Entry[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
+	const [currentPage, setCurrentPage] = useState(1);
 
 	const alphabet = [
 		"A",
@@ -54,6 +63,11 @@ export const Browse: React.FC = () => {
 		fetchEntries();
 	}, [selectedLetter]);
 
+	// Reset to page 1 whenever search or letter filter changes
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [searchTerm, selectedLetter]);
+
 	const fetchEntries = async () => {
 		setLoading(true);
 		let query = supabase
@@ -80,6 +94,37 @@ export const Browse: React.FC = () => {
 			entry.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
 			entry.definition.toLowerCase().includes(searchTerm.toLowerCase()),
 	);
+
+	const totalPages = Math.ceil(filteredEntries.length / ITEMS_PER_PAGE);
+	const paginatedEntries = filteredEntries.slice(
+		(currentPage - 1) * ITEMS_PER_PAGE,
+		currentPage * ITEMS_PER_PAGE,
+	);
+
+	const handlePageChange = (page: number) => {
+		setCurrentPage(page);
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	};
+
+	// Build the page number list with ellipsis
+	const getPageNumbers = () => {
+		const pages: (number | "…")[] = [];
+		if (totalPages <= 7) {
+			return Array.from({ length: totalPages }, (_, i) => i + 1);
+		}
+		pages.push(1);
+		if (currentPage > 3) pages.push("…");
+		for (
+			let i = Math.max(2, currentPage - 1);
+			i <= Math.min(totalPages - 1, currentPage + 1);
+			i++
+		) {
+			pages.push(i);
+		}
+		if (currentPage < totalPages - 2) pages.push("…");
+		pages.push(totalPages);
+		return pages;
+	};
 
 	return (
 		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
@@ -138,25 +183,49 @@ export const Browse: React.FC = () => {
 				</div>
 			</div>
 
+			{/* Results count */}
+			{!loading && filteredEntries.length > 0 && (
+				<div className='mb-6 flex items-center justify-between'>
+					<p className='text-sm text-brand-ink/40 font-medium'>
+						Showing{" "}
+						<span className='text-brand-ink/70 font-bold'>
+							{(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+							{Math.min(
+								currentPage * ITEMS_PER_PAGE,
+								filteredEntries.length,
+							)}
+						</span>{" "}
+						of{" "}
+						<span className='text-brand-ink/70 font-bold'>
+							{filteredEntries.length}
+						</span>{" "}
+						{filteredEntries.length === 1 ? "entry" : "entries"}
+					</p>
+					<p className='text-sm text-brand-ink/40'>
+						Page {currentPage} of {totalPages}
+					</p>
+				</div>
+			)}
+
 			{/* Results Grid */}
 			<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
 				<AnimatePresence mode='popLayout'>
 					{loading ? (
-						Array.from({ length: 6 }).map((_, i) => (
+						Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
 							<div
 								key={i}
 								className='h-64 rounded-2xl bg-white/30 animate-pulse border border-brand-ink/5'
 							/>
 						))
-					) : filteredEntries.length > 0 ? (
-						filteredEntries.map((entry) => (
+					) : paginatedEntries.length > 0 ? (
+						paginatedEntries.map((entry, index) => (
 							<motion.div
 								key={entry.id}
 								layout
-								initial={{ opacity: 0, scale: 0.9 }}
-								animate={{ opacity: 1, scale: 1 }}
+								initial={{ opacity: 0, y: 16 }}
+								animate={{ opacity: 1, y: 0 }}
 								exit={{ opacity: 0, scale: 0.9 }}
-								transition={{ duration: 0.2 }}
+								transition={{ duration: 0.2, delay: index * 0.03 }}
 							>
 								<LexiconCard entry={entry} />
 							</motion.div>
@@ -177,6 +246,63 @@ export const Browse: React.FC = () => {
 					)}
 				</AnimatePresence>
 			</div>
+
+			{/* Pagination */}
+			{!loading && totalPages > 1 && (
+				<div className='mt-16 flex items-center justify-center gap-2'>
+					{/* Prev */}
+					<button
+						onClick={() => handlePageChange(currentPage - 1)}
+						disabled={currentPage === 1}
+						className='flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all
+							disabled:opacity-30 disabled:cursor-not-allowed
+							bg-white/50 text-brand-ink/60 hover:bg-white hover:text-brand-ink
+							disabled:hover:bg-white/50 disabled:hover:text-brand-ink/60'
+					>
+						<ChevronLeft size={16} />
+						Prev
+					</button>
+
+					{/* Page numbers */}
+					<div className='flex items-center gap-1.5'>
+						{getPageNumbers().map((page, i) =>
+							page === "…" ? (
+								<span
+									key={`ellipsis-${i}`}
+									className='w-10 text-center text-brand-ink/30 font-bold select-none'
+								>
+									…
+								</span>
+							) : (
+								<button
+									key={page}
+									onClick={() => handlePageChange(page as number)}
+									className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
+										currentPage === page
+											? "bg-brand-orange text-white shadow-md shadow-brand-orange/20"
+											: "bg-white/50 text-brand-ink/60 hover:bg-white hover:text-brand-ink"
+									}`}
+								>
+									{page}
+								</button>
+							),
+						)}
+					</div>
+
+					{/* Next */}
+					<button
+						onClick={() => handlePageChange(currentPage + 1)}
+						disabled={currentPage === totalPages}
+						className='flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all
+							disabled:opacity-30 disabled:cursor-not-allowed
+							bg-white/50 text-brand-ink/60 hover:bg-white hover:text-brand-ink
+							disabled:hover:bg-white/50 disabled:hover:text-brand-ink/60'
+					>
+						Next
+						<ChevronRight size={16} />
+					</button>
+				</div>
+			)}
 		</div>
 	);
 };
