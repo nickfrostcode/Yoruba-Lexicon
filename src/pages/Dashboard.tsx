@@ -12,6 +12,7 @@ import {
 	Trash2,
 	Save,
 	X,
+	ChevronDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -24,11 +25,16 @@ interface Contribution {
 	created_at: string;
 }
 
+const INITIAL_VISIBLE = 5;
+const LOAD_MORE_COUNT = 5;
+
 export const Dashboard: React.FC = () => {
 	const { user } = useAuth();
 	const [contributions, setContributions] = useState<Contribution[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [isAdding, setIsAdding] = useState(false);
+	const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+	const [loadingMore, setLoadingMore] = useState(false);
 	const [newEntry, setNewEntry] = useState({
 		word: "",
 		phonetic: "",
@@ -56,8 +62,17 @@ export const Dashboard: React.FC = () => {
 			console.error("Error fetching contributions:", error);
 		} else {
 			setContributions(data || []);
+			setVisibleCount(INITIAL_VISIBLE); // reset on refresh
 		}
 		setLoading(false);
+	};
+
+	const handleLoadMore = async () => {
+		setLoadingMore(true);
+		// Small delay so the skeleton feels intentional, not instant
+		await new Promise((r) => setTimeout(r, 400));
+		setVisibleCount((prev) => prev + LOAD_MORE_COUNT);
+		setLoadingMore(false);
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -106,6 +121,10 @@ export const Dashboard: React.FC = () => {
 		}
 	};
 
+	const visibleContributions = contributions.slice(0, visibleCount);
+	const hasMore = visibleCount < contributions.length;
+	const hiddenCount = contributions.length - visibleCount;
+
 	return (
 		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
 			<div className='flex flex-col md:flex-row justify-between items-start md:items-center mb-12 space-y-6 md:space-y-0'>
@@ -116,7 +135,9 @@ export const Dashboard: React.FC = () => {
 					<div className='flex items-center space-x-4 text-brand-ink/60'>
 						<div className='flex items-center space-x-2'>
 							<User size={18} />
-							<span className='font-medium'>{user?.full_name.split(" ")[0] || user?.email.split("@")[0]}</span>
+							<span className='font-medium'>
+								{`${user?.full_name.split(" ")[0]} - ${user?.email}`}
+							</span>
 						</div>
 					</div>
 				</div>
@@ -134,7 +155,7 @@ export const Dashboard: React.FC = () => {
 				{/* Stats Column */}
 				<div className='lg:col-span-1 space-y-8'>
 					<div className='lg:sticky flex flex-col gap-5 top-23'>
-						<div className='glass-card p-8 rounded-3xl border border-brand-ink/5 shadow-xl'>
+						<div className='glass-card p-8 rounded-3xl border border-brand-ink/5 shadow-md'>
 							<h3 className='text-xl font-serif font-bold mb-6'>
 								Your Impact
 							</h3>
@@ -206,67 +227,149 @@ export const Dashboard: React.FC = () => {
 
 				{/* Contributions List */}
 				<div className='lg:col-span-2'>
-					<h3 className='text-2xl font-serif font-bold mb-8'>
-						Recent Contributions
-					</h3>
+					<div className='flex items-baseline justify-between mb-8'>
+						<h3 className='text-2xl font-serif font-bold'>
+							Recent Contributions
+						</h3>
+						{!loading && contributions.length > 0 && (
+							<span className='text-sm text-brand-ink/40 font-medium'>
+								Showing{" "}
+								<span className='text-brand-ink/70 font-bold'>
+									{Math.min(visibleCount, contributions.length)}
+								</span>{" "}
+								of{" "}
+								<span className='text-brand-ink/70 font-bold'>
+									{contributions.length}
+								</span>
+							</span>
+						)}
+					</div>
+
 					<div className='space-y-3'>
 						<AnimatePresence mode='popLayout'>
 							{loading ? (
-								Array.from({ length: 3 }).map((_, i) => (
+								Array.from({ length: INITIAL_VISIBLE }).map((_, i) => (
 									<div
 										key={i}
 										className='h-32 rounded-xl bg-white/30 animate-pulse border border-brand-ink/5'
 									/>
 								))
 							) : contributions.length > 0 ? (
-								contributions.map((contribution) => (
-									<motion.div
-										key={contribution.id}
-										layout
-										initial={{ opacity: 0, x: -20 }}
-										animate={{ opacity: 1, x: 0 }}
-										exit={{ opacity: 0, x: 20 }}
-										className='glass-card p-6 rounded-xl border border-brand-ink/5 flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0'
-									>
-										<div>
-											<div className='flex items-center space-x-3 mb-2'>
-												<h4 className='text-xl font-serif font-bold'>
-													{contribution.word}
-												</h4>
-												<span
-													className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-														contribution.status === "approved"
-															? "bg-green-100 text-green-600"
-															: "bg-brand-orange/10 text-brand-orange"
-													}`}
+								<>
+									{visibleContributions.map((contribution, index) => (
+										<motion.div
+											key={contribution.id}
+											layout
+											initial={{ opacity: 0, x: -20 }}
+											animate={{ opacity: 1, x: 0 }}
+											exit={{ opacity: 0, x: 20 }}
+											transition={{
+												delay:
+													index >= visibleCount - LOAD_MORE_COUNT
+														? (index -
+																(visibleCount -
+																	LOAD_MORE_COUNT)) *
+															0.05
+														: 0,
+											}}
+											className='glass-card p-6 rounded-xl border border-brand-ink/5 flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0'
+										>
+											<div>
+												<div className='flex items-center space-x-3 mb-2'>
+													<h4 className='text-xl font-serif font-bold'>
+														{contribution.word}
+													</h4>
+													<span
+														className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+															contribution.status === "approved"
+																? "bg-green-100 text-green-600"
+																: "bg-brand-orange/10 text-brand-orange"
+														}`}
+													>
+														{contribution.status}
+													</span>
+												</div>
+												<p className='text-brand-ink/60 text-sm line-clamp-1 max-w-md'>
+													{contribution.definition}
+												</p>
+											</div>
+											<div className='flex items-center space-x-4'>
+												<div className='text-right mr-4 hidden md:block'>
+													<div className='text-[10px] font-bold uppercase tracking-widest text-brand-ink/30'>
+														Submitted
+													</div>
+													<div className='text-xs font-medium'>
+														{new Date(
+															contribution.created_at,
+														).toLocaleDateString()}
+													</div>
+												</div>
+												<button
+													onClick={() =>
+														deleteEntry(contribution.id)
+													}
+													className='p-2 rounded-xl text-brand-ink/20 hover:text-red-500 hover:bg-red-50 transition-all'
 												>
-													{contribution.status}
-												</span>
+													<Trash2 size={18} />
+												</button>
 											</div>
-											<p className='text-brand-ink/60 text-sm line-clamp-1 max-w-md'>
-												{contribution.definition}
-											</p>
-										</div>
-										<div className='flex items-center space-x-4'>
-											<div className='text-right mr-4 hidden md:block'>
-												<div className='text-[10px] font-bold uppercase tracking-widest text-brand-ink/30'>
-													Submitted
-												</div>
-												<div className='text-xs font-medium'>
-													{new Date(
-														contribution.created_at,
-													).toLocaleDateString()}
-												</div>
-											</div>
+										</motion.div>
+									))}
+
+									{/* Load more skeleton */}
+									{loadingMore &&
+										Array.from({
+											length: Math.min(LOAD_MORE_COUNT, hiddenCount),
+										}).map((_, i) => (
+											<motion.div
+												key={`skeleton-${i}`}
+												initial={{ opacity: 0 }}
+												animate={{ opacity: 1 }}
+												className='h-24 rounded-xl bg-white/30 animate-pulse border border-brand-ink/5'
+											/>
+										))}
+
+									{/* Load More button */}
+									{hasMore && !loadingMore && (
+										<motion.div
+											initial={{ opacity: 0 }}
+											animate={{ opacity: 1 }}
+											className='pt-2'
+										>
 											<button
-												onClick={() => deleteEntry(contribution.id)}
-												className='p-2 rounded-xl text-brand-ink/20 hover:text-red-500 hover:bg-red-50 transition-all'
+												onClick={handleLoadMore}
+												className='w-full py-4 rounded-xl border-2 border-dashed border-brand-ink/10 
+													text-brand-ink/40 hover:text-brand-ink/70 hover:border-brand-ink/20
+													hover:bg-white/40 transition-all duration-200
+													flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-widest'
 											>
-												<Trash2 size={18} />
+												<ChevronDown size={16} />
+												Load{" "}
+												{Math.min(
+													LOAD_MORE_COUNT,
+													hiddenCount,
+												)}{" "}
+												more
+												<span className='text-brand-ink/25'>
+													({hiddenCount} remaining)
+												</span>
 											</button>
-										</div>
-									</motion.div>
-								))
+										</motion.div>
+									)}
+
+									{/* All loaded indicator */}
+									{!hasMore &&
+										contributions.length > INITIAL_VISIBLE && (
+											<motion.div
+												initial={{ opacity: 0 }}
+												animate={{ opacity: 1 }}
+												className='pt-2 text-center text-xs font-bold uppercase tracking-widest text-brand-ink/20 py-4'
+											>
+												All {contributions.length} contributions
+												shown
+											</motion.div>
+										)}
+								</>
 							) : (
 								<div className='py-24 text-center border-2 border-dashed border-brand-ink/5 rounded-3xl'>
 									<Plus
