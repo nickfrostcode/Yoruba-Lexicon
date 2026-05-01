@@ -14,7 +14,6 @@ import {
 	X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface Contribution {
@@ -38,7 +37,6 @@ export const Dashboard: React.FC = () => {
 		example_yoruba: "",
 		example_english: "",
 	});
-	const navigate = useNavigate();
 
 	useEffect(() => {
 		if (user) {
@@ -71,7 +69,7 @@ export const Dashboard: React.FC = () => {
 				{
 					...newEntry,
 					contributor_id: user.id,
-					status: "pending",
+					status: "approved",
 				},
 			]);
 			if (error) throw error;
@@ -118,7 +116,7 @@ export const Dashboard: React.FC = () => {
 					<div className='flex items-center space-x-4 text-brand-ink/60'>
 						<div className='flex items-center space-x-2'>
 							<User size={18} />
-							<span className='font-medium'>{user?.email}</span>
+							<span className='font-medium'>{user?.full_name.split(" ")[0] || user?.email.split("@")[0]}</span>
 						</div>
 					</div>
 				</div>

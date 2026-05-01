@@ -2,9 +2,18 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { User } from "@supabase/supabase-js";
 
-const AuthContext = createContext<{ user: User | null; isAdmin: boolean; loading: boolean }>({
+interface User {
+	id: string;
+	email: string;
+	full_name: string;
+}
+
+const AuthContext = createContext<{
+	user: User | null;
+	isAdmin: boolean;
+	loading: boolean;
+}>({
 	user: null,
 	isAdmin: false,
 	loading: true,
@@ -17,18 +26,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 	useEffect(() => {
 		const fetchSessionAndRole = async () => {
-			const { data: { session } } = await supabase.auth.getSession();
-			const currentUser = session?.user ?? null;
-			setUser(currentUser);
+			const {
+				data: { session },
+			} = await supabase.auth.getSession();
+			const sbUser = session?.user ?? null;
 
-			if (currentUser) {
+			if (sbUser) {
+				// Fetch both role and full_name from your custom table
 				const { data: profile } = await supabase
 					.from("profiles")
-					.select("role")
-					.eq("id", currentUser.id)
+					.select("role, full_name")
+					.eq("id", sbUser.id)
 					.single();
+
+				setUser({
+					id: sbUser.id,
+					email: sbUser.email ?? "",
+					full_name: profile?.full_name ?? "",
+				});
 				setIsAdmin(profile?.role === "admin");
 			} else {
+				setUser(null);
 				setIsAdmin(false);
 			}
 			setLoading(false);
@@ -40,17 +58,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange(async (_event, session) => {
-			const currentUser = session?.user ?? null;
-			setUser(currentUser);
+			const sbUser = session?.user ?? null;
 
-			if (currentUser) {
+			if (sbUser) {
 				const { data: profile } = await supabase
 					.from("profiles")
-					.select("role")
-					.eq("id", currentUser.id)
+					.select("role, full_name")
+					.eq("id", sbUser.id)
 					.single();
+
+				setUser({
+					id: sbUser.id,
+					email: sbUser.email ?? "",
+					full_name: profile?.full_name ?? "",
+				});
 				setIsAdmin(profile?.role === "admin");
 			} else {
+				setUser(null);
 				setIsAdmin(false);
 			}
 			setLoading(false);

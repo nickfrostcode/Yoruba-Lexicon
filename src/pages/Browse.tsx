@@ -22,7 +22,33 @@ export const Browse: React.FC = () => {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
 
-	const alphabet = ["A", "B", "D", "E", "Ẹ", "F", "G", "GB", "I", "J", "K", "L", "M", "N", "O", "Ọ", "P", "R", "S", "Ṣ", "T", "U", "W", "Y"];
+	const alphabet = [
+		"A",
+		"B",
+		"D",
+		"E",
+		"Ẹ",
+		"F",
+		"G",
+		"GB",
+		"H",
+		"I",
+		"J",
+		"K",
+		"L",
+		"M",
+		"N",
+		"O",
+		"Ọ",
+		"P",
+		"R",
+		"S",
+		"Ṣ",
+		"T",
+		"U",
+		"W",
+		"Y",
+	];
 
 	useEffect(() => {
 		fetchEntries();
