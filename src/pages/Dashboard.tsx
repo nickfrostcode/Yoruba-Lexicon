@@ -125,6 +125,11 @@ export const Dashboard: React.FC = () => {
 	const hasMore = visibleCount < contributions.length;
 	const hiddenCount = contributions.length - visibleCount;
 
+	const displayFirstName =
+		user?.full_name?.trim()?.split(/\s+/)[0] ||
+		user?.email?.split("@")[0] ||
+		"Contributor";
+
 	return (
 		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
 			<div className='flex flex-col md:flex-row justify-between items-start md:items-center mb-12 space-y-6 md:space-y-0'>
@@ -136,7 +141,8 @@ export const Dashboard: React.FC = () => {
 						<div className='flex items-center space-x-2'>
 							<User size={18} />
 							<span className='font-medium'>
-								{`${user?.full_name.split(" ")[0]} - ${user?.email}`}
+								{displayFirstName}
+								{user?.email ? ` · ${user.email}` : ""}
 							</span>
 						</div>
 					</div>
@@ -293,8 +299,8 @@ export const Dashboard: React.FC = () => {
 													{contribution.definition}
 												</p>
 											</div>
-											<div className='flex items-center space-x-4'>
-												<div className='text-right mr-4 hidden md:block'>
+											<div className='flex items-center space-x-4 flex-row'>
+												<div className='text-right mr-4'>
 													<div className='text-[10px] font-bold uppercase tracking-widest text-brand-ink/30'>
 														Submitted
 													</div>

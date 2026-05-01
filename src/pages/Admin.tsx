@@ -6,16 +6,15 @@ import {
 	CheckCircle,
 	Edit3,
 	Trash2,
-	Filter,
 	Search,
-	ShieldAlert,
 	Save,
 	X,
-	Clock,
+	ChevronRight,
+	ChevronLeft,
+	Volume2,
+	ShieldCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 
 interface Entry {
@@ -31,36 +30,31 @@ interface Entry {
 	contributor_id: string | null;
 }
 
+const ITEMS_PER_PAGE = 12;
+
 export const Admin: React.FC = () => {
-	const { user, isAdmin, loading: authLoading } = useAuth();
 	const [entries, setEntries] = useState<Entry[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [filter, setFilter] = useState<"all" | "pending" | "approved">(
-		"pending",
-	);
+	const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
 	const [searchTerm, setSearchTerm] = useState("");
+	const [currentPage, setCurrentPage] = useState(1);
 	const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
-	const navigate = useNavigate();
 
 	useEffect(() => {
-		if (authLoading) return;
-		if (!user) {
-			navigate("/auth");
-		} else if (isAdmin) {
-			fetchEntries();
-		} else {
-			setLoading(false);
-		}
-	}, [user, isAdmin, authLoading, navigate]);
+		fetchEntries();
+	}, []);
+
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [searchTerm, filter]);
 
 	const fetchEntries = async () => {
 		setLoading(true);
-		let query = supabase
+		const { data, error } = await supabase
 			.from("lexicon_entries")
 			.select("*")
 			.order("created_at", { ascending: false });
 
-		const { data, error } = await query;
 		if (error) {
 			console.error("Error fetching entries:", error);
 		} else {
@@ -83,6 +77,7 @@ export const Admin: React.FC = () => {
 					e.id === id ? { ...e, status: "approved" } : e,
 				),
 			);
+			toast.success("Entry approved");
 		}
 	};
 
@@ -109,6 +104,7 @@ export const Admin: React.FC = () => {
 				entries.map((e) => (e.id === editingEntry.id ? editingEntry : e)),
 			);
 			setEditingEntry(null);
+			toast.success("Entry updated");
 		}
 	};
 
@@ -124,6 +120,7 @@ export const Admin: React.FC = () => {
 			toast.error("Error deleting entry");
 		} else {
 			setEntries(entries.filter((e) => e.id !== id));
+			toast.success("Entry deleted");
 		}
 	};
 
@@ -135,161 +132,214 @@ export const Admin: React.FC = () => {
 		return matchesFilter && matchesSearch;
 	});
 
-	if (!isAdmin && !authLoading) {
-		return (
-			<div className='max-w-7xl mx-auto px-4 py-24 text-center'>
-				<ShieldAlert size={64} className='mx-auto text-red-500 mb-6' />
-				<h1 className='text-4xl font-serif font-bold mb-4'>
-					Access Denied
-				</h1>
-				<p className='text-brand-ink/60 mb-8'>
-					You do not have administrative privileges to access this page.
-				</p>
-				<button onClick={() => navigate("/")} className='btn-primary'>
-					Return Home
-				</button>
-			</div>
-		);
-	}
+	const totalPages = Math.ceil(filteredEntries.length / ITEMS_PER_PAGE) || 1;
+	const paginatedEntries = filteredEntries.slice(
+		(currentPage - 1) * ITEMS_PER_PAGE,
+		currentPage * ITEMS_PER_PAGE,
+	);
 
-	if (authLoading || loading) {
-		return (
-			<div className='max-w-7xl mx-auto px-4 py-24 text-center'>
-				<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-brand-orange mx-auto'></div>
-				<p className='mt-4 text-brand-ink/60'>Verifying credentials...</p>
-			</div>
-		);
-	}
+	const handlePageChange = (page: number) => {
+		setCurrentPage(page);
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	};
+
+	const getPageNumbers = () => {
+		const pages: (number | "…")[] = [];
+		if (totalPages <= 7) {
+			return Array.from({ length: totalPages }, (_, i) => i + 1);
+		}
+		pages.push(1);
+		if (currentPage > 3) pages.push("…");
+		for (
+			let i = Math.max(2, currentPage - 1);
+			i <= Math.min(totalPages - 1, currentPage + 1);
+			i++
+		) {
+			pages.push(i);
+		}
+		if (currentPage < totalPages - 2) pages.push("…");
+		pages.push(totalPages);
+		return pages;
+	};
+
+	const statusFilters: { key: "all" | "pending" | "approved"; label: string }[] =
+		[
+			{ key: "all", label: "All" },
+			{ key: "pending", label: "Pending" },
+			{ key: "approved", label: "Approved" },
+		];
 
 	return (
 		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
-			<div className='flex flex-col md:flex-row justify-between items-start md:items-end mb-12 space-y-6 md:space-y-0'>
-				<div>
+			<div className='flex flex-col md:flex-row md:items-end justify-between mb-12 space-y-8 md:space-y-0'>
+				<div className='max-w-xl'>
 					<h1 className='text-4xl md:text-6xl font-serif font-bold mb-4'>
 						Admin Console
 					</h1>
 					<p className='text-brand-ink/60 text-lg'>
-						Review, edit, and approve community contributions.
+						Review, edit, and approve community contributions. Layout
+						matches the archive browse experience.
 					</p>
 				</div>
 
-				<div className='flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto'>
-					<div className='relative grow'>
-						<Search
-							className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30'
-							size={18}
-						/>
-						<input
-							type='text'
-							placeholder='Search entries...'
-							className='input-field pl-12'
-							value={searchTerm}
-							onChange={(e) => setSearchTerm(e.target.value)}
-						/>
-					</div>
-					<select title="status"
-						className='input-field min-w-37.5'
-						value={filter}
-						onChange={(e) =>
-							setFilter(e.target.value as "all" | "pending" | "approved")
-						}
-					>
-						<option value='pending'>Pending</option>
-						<option value='approved'>Approved</option>
-						<option value='all'>All Entries</option>
-					</select>
+				<div className='relative w-full md:w-96'>
+					<Search
+						className='absolute left-4 top-1/2 -translate-y-1/2 text-brand-ink/30 z-10 pointer-events-none'
+						size={20}
+					/>
+					<input
+						type='text'
+						placeholder='Search for a word or definition...'
+						className='input-field pl-12'
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+					/>
 				</div>
 			</div>
 
-			<div className='space-y-6'>
-				<AnimatePresence mode='popLayout'>
-					{filteredEntries.map((entry) => (
-						<motion.div
-							key={entry.id}
-							layout
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							exit={{ opacity: 0, scale: 0.95 }}
-							className='glass-card p-6 rounded-2xl border border-brand-ink/5 hover:border-brand-orange/20 transition-all'
+			{/* Status filter — same pill style as Browse alphabet */}
+			<div className='mb-12'>
+				<div className='flex flex-wrap gap-2 justify-center'>
+					{statusFilters.map(({ key, label }) => (
+						<button
+							key={key}
+							type='button'
+							onClick={() => setFilter(key)}
+							className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+								filter === key
+									? "bg-brand-orange text-white"
+									: "bg-white/50 text-brand-ink/60 hover:bg-white"
+							}`}
 						>
-							<div className='flex flex-col lg:flex-row justify-between gap-6'>
-								<div className='grow'>
-									<div className='flex items-center space-x-3 mb-2'>
-										<h3 className='text-2xl font-serif font-bold'>
-											{entry.word}
-										</h3>
-										<span
-											className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-												entry.status === "approved"
-													? "bg-green-100 text-green-600"
-													: "bg-brand-orange/10 text-brand-orange"
-											}`}
-										>
-											{entry.status}
-										</span>
-									</div>
-									<div className='flex items-center space-x-4 text-xs font-bold uppercase tracking-widest text-brand-ink/30 mb-4'>
-										<span>{entry.part_of_speech}</span>
-										<span>{entry.phonetic}</span>
-										<span className='flex items-center'>
-											<Clock size={12} className='mr-1' />
-											{new Date(
-												entry.created_at,
-											).toLocaleDateString()}
-										</span>
-									</div>
-									<p className='text-brand-ink/70 leading-relaxed max-w-3xl'>
-										{entry.definition}
-									</p>
-								</div>
-
-								<div className='flex flex-row lg:flex-col justify-end items-center lg:items-end space-x-2 lg:space-x-0 lg:space-y-2'>
-									{entry.status === "pending" && (
-										<button
-											onClick={() => handleApprove(entry.id)}
-											className='p-3 rounded-xl bg-green-500 text-white hover:bg-green-600 transition-colors shadow-lg shadow-green-500/20'
-											title='Approve'
-										>
-											<CheckCircle size={20} />
-										</button>
-									)}
-									<button
-										onClick={() => setEditingEntry(entry)}
-										className='p-3 rounded-xl bg-brand-ink text-white hover:bg-brand-ink/80 transition-colors'
-										title='Edit'
-									>
-										<Edit3 size={20} />
-									</button>
-									<button
-										onClick={() => handleDelete(entry.id)}
-										className='p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors'
-										title='Delete'
-									>
-										<Trash2 size={20} />
-									</button>
-								</div>
-							</div>
-						</motion.div>
+							{label}
+						</button>
 					))}
-				</AnimatePresence>
-
-				{filteredEntries.length === 0 && (
-					<div className='py-24 text-center border-2 border-dashed border-brand-ink/5 rounded-3xl'>
-						<Filter
-							size={48}
-							className='mx-auto text-brand-ink/10 mb-6'
-						/>
-						<h3 className='text-2xl font-serif font-bold mb-2'>
-							No entries found
-						</h3>
-						<p className='text-brand-ink/60'>
-							Try adjusting your filters or search terms.
-						</p>
-					</div>
-				)}
+				</div>
 			</div>
 
-			{/* Edit Modal */}
+			{!loading && filteredEntries.length > 0 && (
+				<div className='mb-6 flex items-center justify-between flex-wrap gap-2'>
+					<p className='text-sm text-brand-ink/40 font-medium'>
+						Showing{" "}
+						<span className='text-brand-ink/70 font-bold'>
+							{(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+							{Math.min(
+								currentPage * ITEMS_PER_PAGE,
+								filteredEntries.length,
+							)}
+						</span>{" "}
+						of{" "}
+						<span className='text-brand-ink/70 font-bold'>
+							{filteredEntries.length}
+						</span>{" "}
+						{filteredEntries.length === 1 ? "entry" : "entries"}
+					</p>
+					<p className='text-sm text-brand-ink/40'>
+						Page {currentPage} of {totalPages}
+					</p>
+				</div>
+			)}
+
+			<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
+				<AnimatePresence mode='popLayout'>
+					{loading ? (
+						Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
+							<div
+								key={i}
+								className='h-64 rounded-2xl bg-white/30 animate-pulse border border-brand-ink/5'
+							/>
+						))
+					) : paginatedEntries.length > 0 ? (
+						paginatedEntries.map((entry, index) => (
+							<motion.div
+								key={entry.id}
+								layout
+								initial={{ opacity: 0, y: 16 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, scale: 0.9 }}
+								transition={{ duration: 0.2, delay: index * 0.03 }}
+							>
+								<AdminLexiconCard
+									entry={entry}
+									onApprove={handleApprove}
+									onEdit={setEditingEntry}
+									onDelete={handleDelete}
+								/>
+							</motion.div>
+						))
+					) : (
+						<div className='col-span-full py-24 text-center'>
+							<ShieldCheck
+								size={48}
+								className='mx-auto text-brand-ink/10 mb-6'
+							/>
+							<h3 className='text-2xl font-serif font-bold mb-2'>
+								No entries found
+							</h3>
+							<p className='text-brand-ink/60'>
+								Try adjusting your filters or search terms.
+							</p>
+						</div>
+					)}
+				</AnimatePresence>
+			</div>
+
+			{!loading && totalPages > 1 && (
+				<div className='mt-16 flex items-center justify-center gap-2'>
+					<button
+						type='button'
+						onClick={() => handlePageChange(currentPage - 1)}
+						disabled={currentPage === 1}
+						className='flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all
+							disabled:opacity-30 disabled:cursor-not-allowed
+							bg-white/50 text-brand-ink/60 hover:bg-white hover:text-brand-ink
+							disabled:hover:bg-white/50 disabled:hover:text-brand-ink/60'
+					>
+						<ChevronLeft size={16} />
+						Prev
+					</button>
+
+					<div className='flex items-center gap-1.5'>
+						{getPageNumbers().map((page, i) =>
+							page === "…" ? (
+								<span
+									key={`ellipsis-${i}`}
+									className='w-10 text-center text-brand-ink/30 font-bold select-none'
+								>
+									…
+								</span>
+							) : (
+								<button
+									type='button'
+									key={page}
+									onClick={() => handlePageChange(page as number)}
+									className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
+										currentPage === page
+											? "bg-brand-orange text-white shadow-md shadow-brand-orange/20"
+											: "bg-white/50 text-brand-ink/60 hover:bg-white hover:text-brand-ink"
+									}`}
+								>
+									{page}
+								</button>
+							),
+						)}
+					</div>
+
+					<button
+						type='button'
+						onClick={() => handlePageChange(currentPage + 1)}
+						disabled={currentPage === totalPages}
+						className='flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all
+							disabled:opacity-30 disabled:cursor-not-allowed
+							bg-white/50 text-brand-ink/60 hover:bg-white hover:text-brand-ink
+							disabled:hover:bg-white/50 disabled:hover:text-brand-ink/60'
+					>
+						Next
+						<ChevronRight size={16} />
+					</button>
+				</div>
+			)}
+
 			<AnimatePresence>
 				{editingEntry && (
 					<div className='fixed inset-0 z-100 flex items-center justify-center p-4'>
@@ -311,6 +361,7 @@ export const Admin: React.FC = () => {
 									Edit Entry
 								</h3>
 								<button
+									type='button'
 									onClick={() => setEditingEntry(null)}
 									className='p-2 rounded-xl hover:bg-brand-ink/5 text-brand-ink/40'
 								>
@@ -468,6 +519,157 @@ export const Admin: React.FC = () => {
 					</div>
 				)}
 			</AnimatePresence>
+		</div>
+	);
+};
+
+const AdminLexiconCard: React.FC<{
+	entry: Entry;
+	onApprove: (id: string) => void;
+	onEdit: (entry: Entry) => void;
+	onDelete: (id: string) => void;
+}> = ({ entry, onApprove, onEdit, onDelete }) => {
+	const [isExpanded, setIsExpanded] = useState(false);
+
+	const speak = (text: string) => {
+		speechSynthesis.cancel();
+		const voices = speechSynthesis.getVoices();
+		const yorubaVoice = voices.find((v) => v.lang === "yo-NG");
+		if (yorubaVoice) {
+			const utterance = new SpeechSynthesisUtterance(text);
+			utterance.voice = yorubaVoice;
+			utterance.lang = "yo-NG";
+			speechSynthesis.speak(utterance);
+			return;
+		}
+		toast.error("Yoruba voice not available on your device.");
+	};
+
+	return (
+		<div
+			className={`glass-card p-8 rounded-2xl transition-all duration-300 cursor-pointer group hover:border-brand-orange/30 ${
+				isExpanded
+					? "ring-2 ring-brand-orange/20 shadow-2xl"
+					: "hover:shadow-lg"
+			}`}
+			onClick={() => setIsExpanded(!isExpanded)}
+		>
+			<div className='flex justify-between items-start mb-4 gap-2'>
+				<div className='min-w-0 flex-1'>
+					<h3 className='text-3xl font-serif font-bold text-brand-ink group-hover:text-brand-orange transition-colors break-words'>
+						{entry.word}
+					</h3>
+					<div className='flex flex-wrap items-center gap-x-3 gap-y-1 mt-1'>
+						<span
+							className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+								entry.status === "approved"
+									? "bg-green-100 text-green-600"
+									: "bg-brand-orange/10 text-brand-orange"
+							}`}
+						>
+							{entry.status}
+						</span>
+						<span className='text-xs font-bold uppercase tracking-widest text-brand-orange'>
+							{entry.part_of_speech || "N/A"}
+						</span>
+						<span className='text-brand-ink/30 text-xs font-mono truncate max-w-[140px]'>
+							{entry.phonetic || "/.../"}
+						</span>
+					</div>
+				</div>
+				<div
+					className='flex items-center gap-1 shrink-0'
+					onClick={(e) => e.stopPropagation()}
+				>
+					{entry.status === "pending" && (
+						<button
+							type='button'
+							onClick={() => onApprove(entry.id)}
+							className='p-2 rounded-xl bg-green-500 text-white hover:bg-green-600 transition-colors'
+							title='Approve'
+						>
+							<CheckCircle size={20} />
+						</button>
+					)}
+					<button
+						type='button'
+						onClick={() => onEdit(entry)}
+						className='p-2 rounded-xl bg-brand-ink text-white hover:bg-brand-ink/80 transition-colors'
+						title='Edit'
+					>
+						<Edit3 size={18} />
+					</button>
+					<button
+						type='button'
+						onClick={() => onDelete(entry.id)}
+						className='p-2 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors'
+						title='Delete'
+					>
+						<Trash2 size={18} />
+					</button>
+					<button
+						type='button'
+						className='text-brand-ink/20 hover:text-brand-orange transition-colors p-2'
+						title='Pronounce'
+						onClick={() => speak(entry.word)}
+					>
+						<Volume2 size={22} />
+					</button>
+				</div>
+			</div>
+
+			<p
+				className={`text-brand-ink/70 leading-relaxed mb-4 ${isExpanded ? "" : "line-clamp-2"}`}
+			>
+				{entry.definition}
+			</p>
+
+			<AnimatePresence>
+				{isExpanded && (
+					<motion.div
+						initial={{ opacity: 0, height: 0 }}
+						animate={{ opacity: 1, height: "auto" }}
+						exit={{ opacity: 0, height: 0 }}
+						className='overflow-hidden pt-4 border-t border-brand-ink/5'
+					>
+						<div className='space-y-6'>
+							<p className='text-xs font-bold uppercase tracking-widest text-brand-ink/40'>
+								Submitted{" "}
+								<span className='text-brand-ink/60 font-medium normal-case'>
+									{new Date(entry.created_at).toLocaleString()}
+								</span>
+							</p>
+							{entry.example_yoruba && (
+								<div>
+									<h4 className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 mb-2'>
+										Example (Yorùbá)
+									</h4>
+									<p className='text-lg font-serif italic text-brand-ink/80 leading-relaxed'>
+										"{entry.example_yoruba}"
+									</p>
+								</div>
+							)}
+							{entry.example_english && (
+								<div>
+									<h4 className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 mb-2'>
+										Translation (English)
+									</h4>
+									<p className='text-brand-ink/60 leading-relaxed'>
+										"{entry.example_english}"
+									</p>
+								</div>
+							)}
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+
+			{!isExpanded && (
+				<div className='flex items-center text-xs font-bold uppercase tracking-widest text-brand-ink/30 mt-2 group-hover:text-brand-orange transition-colors'>
+					<span>View Details</span>
+					<ChevronRight size={14} className='ml-1' />
+				</div>
+			)}
 		</div>
 	);
 };
