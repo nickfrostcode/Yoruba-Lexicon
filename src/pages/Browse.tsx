@@ -10,6 +10,7 @@ import {
 	BookOpen,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 
 interface Entry {
 	id: string;
@@ -310,6 +311,34 @@ export const Browse: React.FC = () => {
 const LexiconCard: React.FC<{ entry: Entry }> = ({ entry }) => {
 	const [isExpanded, setIsExpanded] = useState(false);
 
+	const speak = (text: string) => {
+		console.log("speaking", text);
+		speechSynthesis.cancel();
+		const voices = speechSynthesis.getVoices();
+		const yorubaVoice = voices.find((v) => v.lang === "yo-NG");
+		// If Yoruba voice exists → use Web Speech API
+		if (yorubaVoice) {
+			const utterance = new SpeechSynthesisUtterance(text);
+			utterance.voice = yorubaVoice;
+			utterance.lang = "yo-NG";
+
+			speechSynthesis.speak(utterance);
+			console.log("spoken with system Yoruba voice");
+			return;
+		}
+		// Fallback → Google TTS
+		toast.error("Yoruba voice not available on your device.");
+		// const audio = new Audio(
+		// 	`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(
+		// 		text,
+		// 	)}&tl=yo&client=tw-ob`,
+		// );
+		// audio.play().catch((err) => {
+		// 	console.error("Audio playback failed:", err);
+		// });
+		// console.log("spoken with Google TTS fallback");
+	};
+
 	return (
 		<div
 			className={`glass-card p-8 rounded-2xl transition-all duration-300 cursor-pointer group hover:border-brand-orange/30 ${
@@ -333,8 +362,14 @@ const LexiconCard: React.FC<{ entry: Entry }> = ({ entry }) => {
 						</span>
 					</div>
 				</div>
-				<button className='text-brand-ink/20 hover:text-brand-orange transition-colors'>
-					<Volume2 size={24} />
+				<button className='text-brand-ink/20 hover:text-brand-orange transition-colors cursor-pointer'>
+					<Volume2
+						size={24}
+						onClick={(e) => {
+							e.stopPropagation();
+							speak(entry.word);
+						}}
+					/>
 				</button>
 			</div>
 
