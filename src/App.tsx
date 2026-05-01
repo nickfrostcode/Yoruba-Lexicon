@@ -16,6 +16,7 @@ import { Admin } from "./pages/Admin";
 import { Contributors } from "./pages/Contributors";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./lib/ProtectedRoute";
+import { AdminRoute } from "./lib/AdminRoute";
 
 export default function App() {
 	return (
@@ -32,9 +33,11 @@ export default function App() {
 						/>
 						<Route path='/auth' element={<Auth />} />
 
-						{/* Protected Routes Wrapper */}
 						<Route element={<ProtectedRoute />}>
 							<Route path='/dashboard' element={<Dashboard />} />
+						</Route>
+
+						<Route element={<AdminRoute />}>
 							<Route path='/admin' element={<Admin />} />
 						</Route>
 

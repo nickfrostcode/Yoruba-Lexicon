@@ -4,9 +4,9 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export const AdminRoute = () => {
-	const { user, isAdmin, loading } = useAuth();
+	const { user, isAdmin, initialized, profileLoaded } = useAuth();
 
-	if (loading) {
+	if (!initialized || !profileLoaded) {
 		return (
 			<div className='min-h-[60vh] flex items-center justify-center'>
 				<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-brand-orange'></div>

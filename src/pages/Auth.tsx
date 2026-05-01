@@ -1,8 +1,9 @@
 /** @format */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
 	Mail,
 	Lock,
@@ -25,6 +26,12 @@ export const Auth: React.FC = () => {
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [fullName, setFullName] = useState("");
 	const navigate = useNavigate();
+	const { user, initialized } = useAuth();
+
+	useEffect(() => {
+		if (!initialized || !user) return;
+		navigate("/dashboard", { replace: true });
+	}, [initialized, user, navigate]);
 
 	const handleAuth = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -67,7 +74,6 @@ export const Auth: React.FC = () => {
 				// }
 				toast.success("Account created successfully!");
 			}
-			navigate("/dashboard");
 		} catch (err: unknown) {
 			if (err instanceof AuthError || err instanceof Error) {
 				toast.error(

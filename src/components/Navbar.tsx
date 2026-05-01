@@ -1,6 +1,6 @@
 /** @format */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
 	Menu,
@@ -12,59 +12,14 @@ import {
 	ShieldCheck,
 	LogOut,
 } from "lucide-react";
-import { supabase, Database } from "../lib/supabase";
-import { User as SupabaseUser } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "motion/react";
-
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+import { useAuth } from "../context/AuthContext";
 
 export const Navbar: React.FC = () => {
 	const [isOpen, setIsOpen] = useState(false);
-	const [user, setUser] = useState<SupabaseUser | null>(null);
-	const [role, setRole] = useState<string | null>(null);
-	const [profile, setProfile] = useState<Profile | null>(null);
+	const { user, isAdmin, signOut } = useAuth();
 	const location = useLocation();
 	const navigate = useNavigate();
-
-	useEffect(() => {
-		const fetchSession = async () => {
-			const {
-				data: { session },
-			} = await supabase.auth.getSession();
-			setUser(session?.user ?? null);
-			if (session?.user) {
-				const { data: profileData } = await supabase
-					.from("profiles")
-					.select("*")
-					.eq("id", session.user.id)
-					.single();
-				setRole(profileData?.role ?? "user");
-				setProfile(profileData);
-			}
-		};
-
-		fetchSession();
-
-		const {
-			data: { subscription },
-		} = supabase.auth.onAuthStateChange(async (_event, session) => {
-			setUser(session?.user ?? null);
-			if (session?.user) {
-				const { data: profileData } = await supabase
-					.from("profiles")
-					.select("*")
-					.eq("id", session.user.id)
-					.single();
-				setRole(profileData?.role ?? "user");
-				setProfile(profileData);
-			} else {
-				setRole(null);
-				setProfile(null);
-			}
-		});
-
-		return () => subscription.unsubscribe();
-	}, []);
 
 	const navLinks = [
 		{ name: "Browse", path: "/browse", icon: BookOpen },
@@ -79,16 +34,14 @@ export const Navbar: React.FC = () => {
 		});
 	}
 
-	if (role === "admin") {
+	if (user && isAdmin) {
 		navLinks.push({ name: "Admin", path: "/admin", icon: ShieldCheck });
 	}
 
 	const handleSignOut = async () => {
-		await supabase.auth.signOut();
-		setRole(null);
-		setProfile(null);
-		setUser(null);
-		navigate("/");
+		await signOut();
+		navigate("/", { replace: true });
+		setIsOpen(false);
 	};
 
 	return (
@@ -103,7 +56,6 @@ export const Navbar: React.FC = () => {
 						</Link>
 					</div>
 
-					{/* Desktop Nav */}
 					<div className='hidden md:flex items-center space-x-8'>
 						{navLinks.map((link) => (
 							<Link
@@ -121,6 +73,7 @@ export const Navbar: React.FC = () => {
 						))}
 						{user ? (
 							<button
+								type='button'
 								onClick={handleSignOut}
 								className='btn-secondary py-2 px-5 text-sm flex items-center space-x-2'
 							>
@@ -138,9 +91,9 @@ export const Navbar: React.FC = () => {
 						)}
 					</div>
 
-					{/* Mobile menu button */}
 					<div className='md:hidden flex items-center'>
 						<button
+							type='button'
 							onClick={() => setIsOpen(!isOpen)}
 							className='text-brand-ink p-2 rounded-md hover:bg-brand-ink/5'
 						>
@@ -150,7 +103,6 @@ export const Navbar: React.FC = () => {
 				</div>
 			</div>
 
-			{/* Mobile Nav */}
 			<AnimatePresence>
 				{isOpen && (
 					<motion.div
@@ -174,10 +126,8 @@ export const Navbar: React.FC = () => {
 							<div className='pt-4'>
 								{user ? (
 									<button
-										onClick={() => {
-											setIsOpen(false);
-											handleSignOut();
-										}}
+										type='button'
+										onClick={handleSignOut}
 										className='btn-secondary w-full text-center flex items-center justify-center space-x-2 py-3 rounded-xl'
 									>
 										<LogOut size={18} />
