@@ -13,6 +13,7 @@ import { Browse } from "./pages/Browse";
 import { Dashboard } from "./pages/Dashboard";
 import { Auth } from "./pages/Auth";
 import { Admin } from "./pages/Admin";
+import { Contributors } from "./pages/Contributors";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./lib/ProtectedRoute";
 
@@ -25,6 +26,10 @@ export default function App() {
 						{/* Public Routes */}
 						<Route path='/' element={<Landing />} />
 						<Route path='/browse' element={<Browse />} />
+						<Route
+							path='/contributors'
+							element={<Contributors />}
+						/>
 						<Route path='/auth' element={<Auth />} />
 
 						{/* Protected Routes Wrapper */}

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { Session } from "@supabase/supabase-js";
 
 interface User {
 	id: string;
@@ -25,19 +26,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		const fetchSessionAndRole = async () => {
-			const {
-				data: { session },
-			} = await supabase.auth.getSession();
+		const clearStoredSupabaseSession = () => {
+			if (typeof window === "undefined") return;
+
+			Object.keys(window.localStorage)
+				.filter(
+					(key) =>
+						key.startsWith("sb-") && key.endsWith("-auth-token"),
+				)
+				.forEach((key) => window.localStorage.removeItem(key));
+		};
+
+		const syncAuthState = async (session: Session | null) => {
 			const sbUser = session?.user ?? null;
 
-			if (sbUser) {
-				// Fetch both role and full_name from your custom table
-				const { data: profile } = await supabase
+			if (!sbUser) {
+				setUser(null);
+				setIsAdmin(false);
+				return;
+			}
+
+			try {
+				const { data: profile, error } = await supabase
 					.from("profiles")
 					.select("role, full_name")
 					.eq("id", sbUser.id)
 					.single();
+
+				if (error) {
+					console.error("Error fetching profile:", error);
+				}
 
 				setUser({
 					id: sbUser.id,
@@ -45,11 +63,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 					full_name: profile?.full_name ?? "",
 				});
 				setIsAdmin(profile?.role === "admin");
-			} else {
-				setUser(null);
+			} catch (profileError) {
+				console.error("Unexpected profile sync error:", profileError);
+				setUser({
+					id: sbUser.id,
+					email: sbUser.email ?? "",
+					full_name: "",
+				});
 				setIsAdmin(false);
 			}
-			setLoading(false);
+		};
+
+		const fetchSessionAndRole = async () => {
+			try {
+				const {
+					data: { session },
+					error,
+				} = await supabase.auth.getSession();
+
+				if (error) {
+					throw error;
+				}
+
+				await syncAuthState(session);
+			} catch (sessionError) {
+				console.error("Session hydration failed:", sessionError);
+				// Recover from corrupted persisted auth payloads that can break refresh.
+				clearStoredSupabaseSession();
+				setUser(null);
+				setIsAdmin(false);
+			} finally {
+				setLoading(false);
+			}
 		};
 
 		fetchSessionAndRole();
@@ -58,26 +103,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange(async (_event, session) => {
-			const sbUser = session?.user ?? null;
-
-			if (sbUser) {
-				const { data: profile } = await supabase
-					.from("profiles")
-					.select("role, full_name")
-					.eq("id", sbUser.id)
-					.single();
-
-				setUser({
-					id: sbUser.id,
-					email: sbUser.email ?? "",
-					full_name: profile?.full_name ?? "",
-				});
-				setIsAdmin(profile?.role === "admin");
-			} else {
+			try {
+				await syncAuthState(session);
+			} catch (authChangeError) {
+				console.error("Auth state change sync failed:", authChangeError);
 				setUser(null);
 				setIsAdmin(false);
+			} finally {
+				setLoading(false);
 			}
-			setLoading(false);
 		});
 
 		return () => subscription.unsubscribe();
@@ -85,7 +119,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 	return (
 		<AuthContext.Provider value={{ user, isAdmin, loading }}>
-			{!loading && children}
+			{children}
 		</AuthContext.Provider>
 	);
 };

@@ -7,6 +7,7 @@ import {
 	X,
 	User,
 	BookOpen,
+	Users,
 	LayoutDashboard,
 	ShieldCheck,
 	LogOut,
@@ -65,7 +66,10 @@ export const Navbar: React.FC = () => {
 		return () => subscription.unsubscribe();
 	}, []);
 
-	const navLinks = [{ name: "Browse", path: "/browse", icon: BookOpen }];
+	const navLinks = [
+		{ name: "Browse", path: "/browse", icon: BookOpen },
+		{ name: "Contributors", path: "/contributors", icon: Users },
+	];
 
 	if (user) {
 		navLinks.push({

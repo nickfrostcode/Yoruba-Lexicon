@@ -95,7 +95,7 @@ export const Auth: React.FC = () => {
 					</p>
 				</div>
 
-				<div className='glass-card p-8 rounded-3xl border border-brand-ink/5 shadow-2xl'>
+				<div className='glass-card p-8 rounded-3xl border border-brand-ink/5 shadow-md'>
 					<form onSubmit={handleAuth} className='space-y-6'>
 						{!isLogin && (
 							<>
