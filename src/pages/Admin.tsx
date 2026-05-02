@@ -12,6 +12,11 @@ import { Modal } from "../components/Modal";
 import { EntryForm, LexiconEntryForm } from "../components/EntryForm";
 import { AdminLexiconCard } from "../components/AdminLexiconCard";
 
+interface FilterPillItem<K extends string> {
+	key: K;
+	label: string;
+}
+
 interface Entry {
 	id: string;
 	word: string;
@@ -36,7 +41,7 @@ export const Admin = () => {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
 
-	const statusFilters = [
+	const statusFilters: FilterPillItem<"all" | "pending" | "approved">[] = [
 		{ key: "all", label: "All" },
 		{ key: "pending", label: "Pending" },
 		{ key: "approved", label: "Approved" },

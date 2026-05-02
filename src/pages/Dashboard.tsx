@@ -545,13 +545,13 @@ export const Dashboard: React.FC = () => {
 
 									<div className='space-y-2'>
 										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-											Phonetic (with tone marks)
+											Phonetic Signature
 										</label>{" "}
 										<span className='text-brand-orange'>*</span>
 										<input
 											type='text'
 											className='input-field'
-											placeholder='e.g. /ò.lù.kọ̀/'
+											placeholder='e.g. m-d-r'
 											value={newEntry.phonetic}
 											onChange={(e) =>
 												setNewEntry({
