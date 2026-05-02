@@ -1,149 +1,334 @@
 /** @format */
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
 	Menu,
 	X,
-	User,
 	BookOpen,
 	Users,
 	LayoutDashboard,
 	ShieldCheck,
 	LogOut,
+	ChevronDown,
+	User,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../context/AuthContext";
 
 export const Navbar: React.FC = () => {
 	const [isOpen, setIsOpen] = useState(false);
+	const [isProfileOpen, setIsProfileOpen] = useState(false);
 	const { user, isAdmin, signOut } = useAuth();
 	const location = useLocation();
 	const navigate = useNavigate();
+	const profileRef = useRef<HTMLDivElement>(null);
 
 	const navLinks = [
 		{ name: "Browse", path: "/browse", icon: BookOpen },
 		{ name: "Contributors", path: "/contributors", icon: Users },
+		...(user
+			? [{ name: "Dashboard", path: "/dashboard", icon: LayoutDashboard }]
+			: []),
+		...(user && isAdmin
+			? [{ name: "Admin", path: "/admin", icon: ShieldCheck }]
+			: []),
 	];
 
-	if (user) {
-		navLinks.push({
-			name: "Dashboard",
-			path: "/dashboard",
-			icon: LayoutDashboard,
-		});
-	}
+	// Close profile dropdown on outside click
+	useEffect(() => {
+		const handler = (e: MouseEvent) => {
+			if (
+				profileRef.current &&
+				!profileRef.current.contains(e.target as Node)
+			) {
+				setIsProfileOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handler);
+		return () => document.removeEventListener("mousedown", handler);
+	}, []);
 
-	if (user && isAdmin) {
-		navLinks.push({ name: "Admin", path: "/admin", icon: ShieldCheck });
-	}
+	// Close mobile menu on route change
+	useEffect(() => {
+		setIsOpen(false);
+		setIsProfileOpen(false);
+	}, [location.pathname]);
 
 	const handleSignOut = async () => {
 		await signOut();
 		navigate("/", { replace: true });
 		setIsOpen(false);
+		setIsProfileOpen(false);
 	};
 
+	// Get initials from name or email
+	const getInitials = () => {
+		if (user?.full_name) {
+			return user.full_name
+				.split(" ")
+				.map((n: string) => n[0])
+				.slice(0, 2)
+				.join("")
+				.toUpperCase();
+		}
+		return user?.email?.[0]?.toUpperCase() ?? "U";
+	};
+
+	const displayName =
+		user?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "User";
+
 	return (
-		<nav className='sticky top-0 z-50 bg-brand-cream/80 backdrop-blur-md border-b border-brand-ink/5'>
+		<nav className='sticky top-0 z-50 bg-brand-cream/90 backdrop-blur-md border-b border-brand-ink/5'>
 			<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-				<div className='flex justify-between h-20'>
-					<div className='flex items-center'>
-						<Link to='/' className='flex items-center space-x-2'>
-							<span className='text-2xl font-serif font-bold text-brand-orange'>
-								Yorùbá Lexicon
-							</span>
-						</Link>
+				<div className='flex justify-between items-center h-20'>
+					{/* Logo */}
+					<Link to='/' className='flex items-center space-x-2 shrink-0'>
+						<span className='text-2xl font-serif font-bold text-brand-orange'>
+							Yorùbá<span className='text-brand-ink'> Lexicon</span>
+						</span>
+					</Link>
+
+					{/* Desktop nav links — centered */}
+					<div className='hidden md:flex items-center gap-1 bg-brand-ink/4 rounded-xl p-1'>
+						{navLinks.map((link) => {
+							const isActive = location.pathname === link.path;
+							return (
+								<Link
+									key={link.path}
+									to={link.path}
+									className={`relative flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+										isActive
+											? "text-brand-orange"
+											: "text-brand-ink/60 hover:text-brand-ink hover:bg-brand-ink/5"
+									}`}
+								>
+									{isActive && (
+										<motion.div
+											layoutId='active-pill'
+											className='absolute inset-0 bg-white rounded-xl shadow-sm'
+											transition={{
+												type: "spring",
+												stiffness: 380,
+												damping: 32,
+											}}
+										/>
+									)}
+									<span className='relative z-10 flex items-center gap-1.5'>
+										<link.icon size={15} />
+										{link.name}
+									</span>
+								</Link>
+							);
+						})}
 					</div>
 
-					<div className='hidden md:flex items-center space-x-8'>
-						{navLinks.map((link) => (
-							<Link
-								key={link.path}
-								to={link.path}
-								className={`flex items-center space-x-1 text-sm font-medium transition-colors hover:text-brand-orange ${
-									location.pathname === link.path
-										? "text-brand-orange"
-										: "text-brand-ink/70"
-								}`}
-							>
-								<link.icon size={18} />
-								<span>{link.name}</span>
-							</Link>
-						))}
+					{/* Desktop right side */}
+					<div className='hidden md:flex items-center gap-3'>
 						{user ? (
-							<button
-								type='button'
-								onClick={handleSignOut}
-								className='btn-secondary py-2 px-5 text-sm flex items-center space-x-2'
-							>
-								<LogOut size={16} />
-								<span>Sign Out</span>
-							</button>
+							<div className='relative' ref={profileRef}>
+								<button
+									type='button'
+									onClick={() => setIsProfileOpen(!isProfileOpen)}
+									className='flex items-center gap-2.5 pl-2 pr-3 py-2 rounded-xl
+										hover:bg-brand-ink/5 transition-all duration-200 group'
+								>
+									{/* Avatar */}
+									<div
+										className='w-8 h-8 rounded-lg bg-brand-orange text-white
+										flex items-center justify-center text-xs font-bold shrink-0'
+									>
+										{getInitials()}
+									</div>
+									<div className='text-left'>
+										<p className='text-xs font-bold text-brand-ink leading-none'>
+											{displayName}
+										</p>
+										{isAdmin && (
+											<p className='text-[10px] text-brand-orange font-bold uppercase tracking-wider mt-0.5'>
+												Admin
+											</p>
+										)}
+									</div>
+									<ChevronDown
+										size={14}
+										className={`text-brand-ink/30 transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""}`}
+									/>
+								</button>
+
+								{/* Profile dropdown */}
+								<AnimatePresence>
+									{isProfileOpen && (
+										<motion.div
+											initial={{ opacity: 0, y: 6, scale: 0.97 }}
+											animate={{ opacity: 1, y: 0, scale: 1 }}
+											exit={{ opacity: 0, y: 6, scale: 0.97 }}
+											transition={{ duration: 0.15 }}
+											className='absolute right-0 w-52 bg-white rounded-xl shadow-xl
+												border border-brand-ink/5 overflow-hidden py-1.5'
+										>
+											{/* User info header */}
+											<div className='px-4 py-3 border-b border-brand-ink/5'>
+												<p className='text-xs text-brand-ink/40 mb-0.5'>
+													Signed in as
+												</p>
+												<p className='text-sm font-bold text-brand-ink truncate'>
+													{user.email}
+												</p>
+											</div>
+
+											<div className='py-1.5'>
+												<button
+													type='button'
+													onClick={handleSignOut}
+													className='w-full flex items-center gap-3 px-4 py-2.5
+														text-sm font-medium text-red-500 hover:bg-red-50 transition-colors'
+												>
+													<LogOut size={15} />
+													Sign Out
+												</button>
+											</div>
+										</motion.div>
+									)}
+								</AnimatePresence>
+							</div>
 						) : (
 							<Link
 								to='/auth'
-								className='btn-primary py-2 px-5 text-sm flex items-center space-x-2'
+								className='btn-primary py-2.5 px-5 text-sm flex items-center gap-2'
 							>
-								<User size={16} />
-								<span>Sign In</span>
+								<User size={15} />
+								Sign In
 							</Link>
 						)}
 					</div>
 
-					<div className='md:hidden flex items-center'>
-						<button
-							type='button'
-							onClick={() => setIsOpen(!isOpen)}
-							className='text-brand-ink p-2 rounded-md hover:bg-brand-ink/5'
-						>
-							{isOpen ? <X size={24} /> : <Menu size={24} />}
-						</button>
-					</div>
+					{/* Mobile hamburger */}
+					<button
+						type='button'
+						onClick={() => setIsOpen(!isOpen)}
+						className='md:hidden p-2 rounded-xl text-brand-ink hover:bg-brand-ink/5 transition-colors'
+						aria-label='Toggle menu'
+					>
+						<AnimatePresence mode='wait' initial={false}>
+							{isOpen ? (
+								<motion.span
+									key='close'
+									initial={{ rotate: -90, opacity: 0 }}
+									animate={{ rotate: 0, opacity: 1 }}
+									exit={{ rotate: 90, opacity: 0 }}
+									transition={{ duration: 0.15 }}
+								>
+									<X size={22} />
+								</motion.span>
+							) : (
+								<motion.span
+									key='open'
+									initial={{ rotate: 90, opacity: 0 }}
+									animate={{ rotate: 0, opacity: 1 }}
+									exit={{ rotate: -90, opacity: 0 }}
+									transition={{ duration: 0.15 }}
+								>
+									<Menu size={22} />
+								</motion.span>
+							)}
+						</AnimatePresence>
+					</button>
 				</div>
 			</div>
 
+			{/* Mobile menu */}
 			<AnimatePresence>
 				{isOpen && (
 					<motion.div
 						initial={{ opacity: 0, height: 0 }}
 						animate={{ opacity: 1, height: "auto" }}
 						exit={{ opacity: 0, height: 0 }}
-						className='md:hidden bg-brand-cream border-b border-brand-ink/5 overflow-hidden'
+						transition={{ duration: 0.22, ease: "easeInOut" }}
+						className='md:hidden bg-brand-cream border-t border-brand-ink/5 overflow-hidden'
 					>
-						<div className='px-4 pt-2 pb-6 space-y-2'>
-							{navLinks.map((link) => (
-								<Link
-									key={link.path}
-									to={link.path}
-									onClick={() => setIsOpen(false)}
-									className='flex items-center space-x-3 px-3 py-4 rounded-xl text-base font-medium text-brand-ink/70 hover:bg-brand-ink/5 hover:text-brand-orange'
-								>
-									<link.icon size={20} />
-									<span>{link.name}</span>
-								</Link>
-							))}
-							<div className='pt-4'>
+						<div className='px-4 pt-3 pb-6 space-y-1'>
+							{/* User greeting on mobile */}
+							{user && (
+								<div className='flex items-center gap-3 px-3 py-4 mb-2 border-b border-brand-ink/5'>
+									<div
+										className='w-10 h-10 rounded-xl bg-brand-orange text-white
+										flex items-center justify-center text-sm font-bold shrink-0'
+									>
+										{getInitials()}
+									</div>
+									<div>
+										<p className='font-bold text-brand-ink text-sm'>
+											{displayName}
+										</p>
+										<p className='text-xs text-brand-ink/40 truncate max-w-50'>
+											{user.email}
+										</p>
+									</div>
+									{isAdmin && (
+										<span
+											className='ml-auto text-[10px] font-bold uppercase tracking-wider
+											text-brand-orange bg-brand-orange/10 px-2 py-1 rounded-full'
+										>
+											Admin
+										</span>
+									)}
+								</div>
+							)}
+
+							{navLinks.map((link, i) => {
+								const isActive = location.pathname === link.path;
+								return (
+									<motion.div
+										key={link.path}
+										initial={{ opacity: 0, x: -12 }}
+										animate={{ opacity: 1, x: 0 }}
+										transition={{ delay: i * 0.05 }}
+									>
+										<Link
+											to={link.path}
+											className={`flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-medium transition-all ${
+												isActive
+													? "bg-brand-orange/10 text-brand-orange"
+													: "text-brand-ink/70 hover:bg-brand-ink/5 hover:text-brand-ink"
+											}`}
+										>
+											<link.icon size={18} />
+											{link.name}
+											{isActive && (
+												<div className='ml-auto w-1.5 h-1.5 rounded-full bg-brand-orange' />
+											)}
+										</Link>
+									</motion.div>
+								);
+							})}
+
+							<motion.div
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								transition={{ delay: navLinks.length * 0.05 }}
+								className='pt-3 border-t border-brand-ink/5 mt-2'
+							>
 								{user ? (
 									<button
 										type='button'
 										onClick={handleSignOut}
-										className='btn-secondary w-full text-center flex items-center justify-center space-x-2 py-3 rounded-xl'
+										className='w-full flex items-center justify-center gap-2 py-3 rounded-xl
+											text-sm font-bold text-red-500 hover:bg-red-50 transition-colors'
 									>
-										<LogOut size={18} />
-										<span>Sign Out</span>
+										<LogOut size={16} />
+										Sign Out
 									</button>
 								) : (
 									<Link
 										to='/auth'
-										onClick={() => setIsOpen(false)}
-										className='btn-primary w-full text-center flex items-center justify-center space-x-2'
+										className='btn-primary w-full flex items-center justify-center gap-2 py-3'
 									>
-										<User size={18} />
-										<span>Sign In</span>
+										<User size={16} />
+										Sign In
 									</Link>
 								)}
-							</div>
+							</motion.div>
 						</div>
 					</motion.div>
 				)}
