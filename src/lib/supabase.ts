@@ -57,8 +57,9 @@ export interface Database {
 			lexicon_entries: {
 				Row: {
 					id: string;
-					word: string;
-					phonetic: string | null;
+					base_word: string;
+               phonetic: string;
+               syllables: number | null;
 					part_of_speech: string | null;
 					definition: string;
 					example_yoruba: string | null;
@@ -69,8 +70,8 @@ export interface Database {
 				};
 				Insert: {
 					id?: string;
-					word: string;
-					phonetic?: string | null;
+					base_word: string;
+					phonetic?: string;
 					part_of_speech?: string | null;
 					definition: string;
 					example_yoruba?: string | null;
@@ -81,7 +82,7 @@ export interface Database {
 				};
 				Update: {
 					id?: string;
-					word?: string;
+					base_word?: string;
 					phonetic?: string | null;
 					part_of_speech?: string | null;
 					definition?: string;
