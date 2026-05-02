@@ -6,9 +6,9 @@ import { CheckCircle, Edit3, Trash2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 export interface AdminLexiconEntry {
-   id: string;
-   word: string;
-   syllables: number | null;
+	id: string;
+	base_word: string;
+	syllables: number | null;
 	phonetic: string | null;
 	part_of_speech: string | null;
 	definition: string;
@@ -62,7 +62,7 @@ export const AdminLexiconCard: React.FC<AdminLexiconCardProps> = ({
 			<div className='flex justify-between items-start mb-4 gap-2'>
 				<div className='min-w-0 flex-1'>
 					<h3 className='text-3xl font-serif font-bold text-brand-ink group-hover:text-brand-orange transition-colors wrap-break-word'>
-						{entry.word}
+						{entry.base_word}
 						<span className='text-brand-ink/40 text-sm'>
 							({entry.phonetic})
 						</span>

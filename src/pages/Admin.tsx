@@ -19,7 +19,7 @@ interface FilterPillItem<K extends string> {
 
 interface Entry {
 	id: string;
-	word: string;
+	base_word: string;
 	syllables: number | null;
 	phonetic: string | null;
 	part_of_speech: string | null;
@@ -101,7 +101,7 @@ export const Admin = () => {
 
 		const { error } = await (supabase.from("lexicon_entries") as any)
 			.update({
-				word: editingEntry.word,
+				base_word: editingEntry.base_word,
 				phonetic: editingEntry.phonetic,
 				part_of_speech: editingEntry.part_of_speech,
 				definition: editingEntry.definition,
@@ -145,7 +145,7 @@ export const Admin = () => {
 	const filteredEntries = entries.filter((entry) => {
 		const matchesFilter = filter === "all" || entry.status === filter;
 		const matchesSearch =
-			entry.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			entry.base_word.toLowerCase().includes(searchTerm.toLowerCase()) ||
 			entry.definition.toLowerCase().includes(searchTerm.toLowerCase());
 		return matchesFilter && matchesSearch;
 	});
@@ -272,7 +272,7 @@ export const Admin = () => {
 				{editingEntry && (
 					<EntryForm
 						entry={{
-							word: editingEntry.word,
+							base_word: editingEntry.base_word,
 							phonetic: editingEntry.phonetic || "",
 							part_of_speech: editingEntry.part_of_speech || "noun",
 							definition: editingEntry.definition,
