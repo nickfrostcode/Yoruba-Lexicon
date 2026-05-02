@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 	);
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 	auth: {
 		persistSession: true,
 		autoRefreshToken: true,
@@ -35,7 +35,6 @@ export interface Database {
 					id: string;
 					email: string;
 					full_name: string | null;
-					avatar_url: string | null;
 					role: "user" | "admin";
 					created_at: string;
 				};
@@ -51,7 +50,6 @@ export interface Database {
 					id?: string;
 					email?: string;
 					full_name?: string | null;
-					avatar_url?: string | null;
 					role?: "user" | "admin";
 					created_at?: string;
 				};
@@ -93,6 +91,18 @@ export interface Database {
 					status?: "pending" | "approved";
 					created_at?: string;
 				};
+			};
+		};
+		Functions: {
+			get_contributors_leaderboard: {
+				Args: Record<string, never>;
+				Returns: {
+					id: string;
+					full_name: string | null;
+					email: string | null;
+					contribution_count: number;
+					last_contribution_at: string | null;
+				}[];
 			};
 		};
 	};
