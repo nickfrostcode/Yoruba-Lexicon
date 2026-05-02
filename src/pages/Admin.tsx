@@ -50,8 +50,7 @@ export const Admin: React.FC = () => {
 
 	const fetchEntries = async () => {
 		setLoading(true);
-		const { data, error } = await supabase
-			.from("lexicon_entries")
+		const { data, error } = await (supabase.from("lexicon_entries") as any)
 			.select("*")
 			.order("created_at", { ascending: false });
 
@@ -64,8 +63,7 @@ export const Admin: React.FC = () => {
 	};
 
 	const handleApprove = async (id: string) => {
-		const { error } = await supabase
-			.from("lexicon_entries")
+		const { error } = await (supabase.from("lexicon_entries") as any)
 			.update({ status: "approved" })
 			.eq("id", id);
 
@@ -85,8 +83,7 @@ export const Admin: React.FC = () => {
 		e.preventDefault();
 		if (!editingEntry) return;
 
-		const { error } = await supabase
-			.from("lexicon_entries")
+		const { error } = await (supabase.from("lexicon_entries") as any)
 			.update({
 				word: editingEntry.word,
 				phonetic: editingEntry.phonetic,
@@ -111,8 +108,7 @@ export const Admin: React.FC = () => {
 	const handleDelete = async (id: string) => {
 		if (!confirm("Are you sure you want to delete this entry?")) return;
 
-		const { error } = await supabase
-			.from("lexicon_entries")
+		const { error } = await (supabase.from("lexicon_entries") as any)
 			.delete()
 			.eq("id", id);
 
@@ -162,12 +158,14 @@ export const Admin: React.FC = () => {
 		return pages;
 	};
 
-	const statusFilters: { key: "all" | "pending" | "approved"; label: string }[] =
-		[
-			{ key: "all", label: "All" },
-			{ key: "pending", label: "Pending" },
-			{ key: "approved", label: "Approved" },
-		];
+	const statusFilters: {
+		key: "all" | "pending" | "approved";
+		label: string;
+	}[] = [
+		{ key: "all", label: "All" },
+		{ key: "pending", label: "Pending" },
+		{ key: "approved", label: "Approved" },
+	];
 
 	return (
 		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
@@ -556,7 +554,7 @@ const AdminLexiconCard: React.FC<{
 		>
 			<div className='flex justify-between items-start mb-4 gap-2'>
 				<div className='min-w-0 flex-1'>
-					<h3 className='text-3xl font-serif font-bold text-brand-ink group-hover:text-brand-orange transition-colors break-words'>
+					<h3 className='text-3xl font-serif font-bold text-brand-ink group-hover:text-brand-orange transition-colors wrap-break-word'>
 						{entry.word}
 					</h3>
 					<div className='flex flex-wrap items-center gap-x-3 gap-y-1 mt-1'>
@@ -572,7 +570,7 @@ const AdminLexiconCard: React.FC<{
 						<span className='text-xs font-bold uppercase tracking-widest text-brand-orange'>
 							{entry.part_of_speech || "N/A"}
 						</span>
-						<span className='text-brand-ink/30 text-xs font-mono truncate max-w-[140px]'>
+						<span className='text-brand-ink/30 text-xs font-mono truncate max-w-35'>
 							{entry.phonetic || "/.../"}
 						</span>
 					</div>

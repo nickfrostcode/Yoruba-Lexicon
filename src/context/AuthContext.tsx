@@ -18,6 +18,12 @@ export interface AuthUser {
 	full_name: string;
 }
 
+interface Profile {
+	id: string;
+	role: string;
+	full_name: string | null;
+}
+
 type AuthContextValue = {
 	user: AuthUser | null;
 	session: Session | null;
@@ -93,7 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 					const timeoutMs = 12_000;
 					const query = supabase
 						.from("profiles")
-						.select("role, full_name")
+						.select<string, Profile>("role, full_name")
 						.eq("id", userId)
 						.maybeSingle();
 
@@ -115,15 +121,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 						return;
 					}
 
-					const { data: profile, error } = result;
+					const { data: profile, error } = result as {
+						data: Profile | null;
+						error: any;
+					};
 
 					if (error) {
 						console.error("Error fetching profile:", error);
 					}
 
 					const jwtName = authUserFromJwt(sbUser).full_name;
-					const fullName =
-						profile?.full_name?.trim() || jwtName || "";
+					const fullName = profile?.full_name?.trim() || jwtName || "";
 
 					setUser({
 						id: userId,
@@ -203,10 +211,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 				} = await Promise.race([
 					supabase.auth.getSession(),
 					new Promise<never>((_, reject) =>
-						setTimeout(
-							() => reject(new Error("getSession timeout")),
-							ms,
-						),
+						setTimeout(() => reject(new Error("getSession timeout")), ms),
 					),
 				]);
 
@@ -222,9 +227,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 				if (typeof window !== "undefined") {
 					Object.keys(window.localStorage)
 						.filter(
-							(k) =>
-								k.startsWith("sb-") &&
-								k.endsWith("-auth-token"),
+							(k) => k.startsWith("sb-") && k.endsWith("-auth-token"),
 						)
 						.forEach((k) => window.localStorage.removeItem(k));
 				}
@@ -271,9 +274,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 		[user, session, isAdmin, initialized, profileLoaded, signOut],
 	);
 
-	return (
-		<AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-	);
+	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);

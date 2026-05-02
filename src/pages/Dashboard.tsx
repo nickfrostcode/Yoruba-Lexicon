@@ -25,6 +25,17 @@ interface Contribution {
 	created_at: string;
 }
 
+interface LexiconEntry {
+	word: string;
+	phonetic: string;
+	part_of_speech: string;
+	definition: string;
+	example_yoruba: string;
+	example_english: string;
+	contributor_id: string;
+	status: string;
+}
+
 const INITIAL_VISIBLE = 5;
 const LOAD_MORE_COUNT = 5;
 
@@ -52,8 +63,7 @@ export const Dashboard: React.FC = () => {
 
 	const fetchContributions = async (userId: string) => {
 		setLoading(true);
-		const { data, error } = await supabase
-			.from("lexicon_entries")
+		const { data, error } = await (supabase.from("lexicon_entries") as any)
 			.select("id, word, definition, status, created_at")
 			.eq("contributor_id", userId)
 			.order("created_at", { ascending: false });
@@ -80,7 +90,9 @@ export const Dashboard: React.FC = () => {
 		if (!user) return;
 		setLoading(true);
 		try {
-			const { error } = await supabase.from("lexicon_entries").insert([
+			const { error } = await (
+				supabase.from("lexicon_entries") as any
+			).insert([
 				{
 					...newEntry,
 					contributor_id: user.id,
@@ -110,8 +122,7 @@ export const Dashboard: React.FC = () => {
 		if (!confirm("Are you sure you want to delete this contribution?"))
 			return;
 
-		const { error } = await supabase
-			.from("lexicon_entries")
+		const { error } = await (supabase.from("lexicon_entries") as any)
 			.delete()
 			.eq("id", id);
 		if (error) {

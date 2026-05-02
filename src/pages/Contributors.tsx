@@ -9,7 +9,6 @@ interface ContributorCardData {
 	id: string;
 	fullName: string;
 	email: string;
-	avatarUrl: string | null;
 	totalContributions: number;
 	lastContributionAt: string | null;
 }
@@ -33,78 +32,33 @@ export const Contributors: React.FC = () => {
 	const fetchContributors = async () => {
 		setLoading(true);
 
-		const { data: entries, error: entriesError } = await supabase
-			.from("lexicon_entries")
-			.select("contributor_id, created_at")
-			.eq("status", "approved")
-			.not("contributor_id", "is", null);
-
-		if (entriesError) {
-			console.error("Error fetching contributor entries:", entriesError);
-			setContributors([]);
-			setLoading(false);
-			return;
-		}
-
-		const contributionMap = new Map<
-			string,
-			{ count: number; lastContributionAt: string }
-		>();
-
-		(entries || []).forEach((entry) => {
-			if (!entry.contributor_id) return;
-			const existing = contributionMap.get(entry.contributor_id);
-
-			if (existing) {
-				existing.count += 1;
-				if (
-					new Date(entry.created_at).getTime() >
-					new Date(existing.lastContributionAt).getTime()
-				) {
-					existing.lastContributionAt = entry.created_at;
-				}
-				return;
-			}
-
-			contributionMap.set(entry.contributor_id, {
-				count: 1,
-				lastContributionAt: entry.created_at,
-			});
+		const mapRpcRowToCard = (row: {
+			id: string;
+			full_name: string | null;
+			email: string | null;
+			contribution_count: number | string;
+			last_contribution_at: string | null;
+		}): ContributorCardData => ({
+			id: row.id,
+			fullName:
+				row.full_name?.trim() || row.email?.split("@")[0] || "Contributor",
+			email: row.email ?? "",
+			totalContributions: Number(row.contribution_count),
+			lastContributionAt: row.last_contribution_at,
 		});
 
-		const contributorIds = Array.from(contributionMap.keys());
+		const { data, error } = (await supabase.rpc(
+			"get_contributors_leaderboard",
+		)) as { data: any[] | null; error: any };
 
-		if (contributorIds.length === 0) {
+		if (error) {
+			console.error("Error fetching contributors:", error);
 			setContributors([]);
 			setLoading(false);
 			return;
 		}
 
-		const { data: profiles, error: profilesError } = await supabase
-			.from("profiles")
-			.select("id, full_name, email, avatar_url")
-			.in("id", contributorIds);
-
-		if (profilesError) {
-			console.error("Error fetching contributor profiles:", profilesError);
-			setContributors([]);
-			setLoading(false);
-			return;
-		}
-
-		const contributorCards = (profiles || []).map((profile) => {
-			const stats = contributionMap.get(profile.id);
-			return {
-				id: profile.id,
-				fullName: profile.full_name || profile.email.split("@")[0],
-				email: profile.email,
-				avatarUrl: profile.avatar_url,
-				totalContributions: stats?.count || 0,
-				lastContributionAt: stats?.lastContributionAt || null,
-			};
-		});
-
-		setContributors(contributorCards);
+		setContributors((data || []).map(mapRpcRowToCard));
 		setLoading(false);
 	};
 
@@ -121,13 +75,9 @@ export const Contributors: React.FC = () => {
 					(a, b) => a.totalContributions - b.totalContributions,
 				);
 			case "name-asc":
-				return sorted.sort((a, b) =>
-					a.fullName.localeCompare(b.fullName),
-				);
+				return sorted.sort((a, b) => a.fullName.localeCompare(b.fullName));
 			case "name-desc":
-				return sorted.sort((a, b) =>
-					b.fullName.localeCompare(a.fullName),
-				);
+				return sorted.sort((a, b) => b.fullName.localeCompare(a.fullName));
 			case "latest-activity":
 				return sorted.sort((a, b) => {
 					const aTime = a.lastContributionAt
@@ -157,12 +107,12 @@ export const Contributors: React.FC = () => {
 					</h1>
 					<p className='text-brand-ink/60 text-lg'>
 						Meet the people preserving Yorùbá language knowledge.
-						Contributors are ranked by approved lexicon entries and can
-						be sorted by contribution or activity.
+						Contributors are ranked by approved lexicon entries and can be
+						sorted by contribution or activity.
 					</p>
 				</div>
 
-				<div className='glass-card rounded-2xl p-5 border border-brand-ink/5 min-w-[250px]'>
+				<div className='glass-card rounded-2xl p-5 border border-brand-ink/5 min-w-62.5'>
 					<div className='text-xs uppercase tracking-widest text-brand-ink/40 font-bold mb-2'>
 						Community Snapshot
 					</div>
@@ -193,10 +143,8 @@ export const Contributors: React.FC = () => {
 				<div className='flex items-center gap-3'>
 					<select
 						value={sortBy}
-						onChange={(e) =>
-							setSortBy(e.target.value as SortOption)
-						}
-						className='input-field py-2! px-3! w-auto! min-w-[220px]'
+						onChange={(e) => setSortBy(e.target.value as SortOption)}
+						className='input-field py-2! px-3! w-auto! min-w-55'
 					>
 						<option value='highest'>Highest Contribution</option>
 						<option value='lowest'>Lowest Contribution</option>
@@ -229,24 +177,11 @@ export const Contributors: React.FC = () => {
 							>
 								<div className='flex items-start justify-between mb-6'>
 									<div className='flex items-center space-x-4'>
-										{contributor.avatarUrl ? (
-											<img
-												src={contributor.avatarUrl}
-												alt={contributor.fullName}
-												className='w-12 h-12 rounded-xl object-cover border border-brand-ink/10'
-											/>
-										) : (
-											<div className='w-12 h-12 rounded-xl bg-brand-orange/10 text-brand-orange font-bold flex items-center justify-center'>
-												{contributor.fullName
-													.charAt(0)
-													.toUpperCase()}
-											</div>
-										)}
 										<div>
 											<h3 className='text-xl font-serif font-bold leading-tight'>
 												{contributor.fullName}
 											</h3>
-											<p className='text-sm text-brand-ink/50 truncate max-w-[180px]'>
+											<p className='text-sm text-brand-ink/50 truncate max-w-45'>
 												{contributor.email}
 											</p>
 										</div>
