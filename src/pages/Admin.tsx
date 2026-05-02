@@ -9,37 +9,24 @@ import { PageHeader } from "../components/PageHeader";
 import { FilterPills } from "../components/FilterPills";
 import { Pagination } from "../components/Pagination";
 import { Modal } from "../components/Modal";
-import { EntryForm, LexiconEntryForm } from "../components/EntryForm";
+import { EntryForm } from "../components/EntryForm";
 import { AdminLexiconCard } from "../components/AdminLexiconCard";
+import { LexiconEntry, LexiconEntryForm } from "../lib/types";
 
 interface FilterPillItem<K extends string> {
 	key: K;
 	label: string;
 }
 
-interface Entry {
-	id: string;
-	base_word: string;
-	syllables: number | null;
-	phonetic: string | null;
-	part_of_speech: string | null;
-	definition: string;
-	example_yoruba: string | null;
-	example_english: string | null;
-	status: "pending" | "approved";
-	created_at: string;
-	contributor_id: string | null;
-}
-
 const ITEMS_PER_PAGE = 12;
 
 export const Admin = () => {
-	const [entries, setEntries] = useState<Entry[]>([]);
+	const [entries, setEntries] = useState<LexiconEntry[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
-	const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+	const [editingEntry, setEditingEntry] = useState<LexiconEntry | null>(null);
 
 	const statusFilters: FilterPillItem<"all" | "pending" | "approved">[] = [
 		{ key: "all", label: "All" },

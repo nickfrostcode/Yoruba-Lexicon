@@ -16,25 +16,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-
-interface Contribution {
-	id: string;
-	base_word: string;
-	phonetic: string;
-	definition: string;
-	status: "pending" | "approved";
-	created_at: string;
-}
-
-interface NewEntry {
-	base_word: string;
-	phonetic: string;
-	part_of_speech: string;
-	definition: string;
-	example_yoruba: string;
-	example_english: string;
-	syllables: string;
-}
+import { Contribution, LexiconEntryForm } from "../lib/types";
 
 const INITIAL_VISIBLE = 6;
 const LOAD_MORE_COUNT = 6;
@@ -46,7 +28,7 @@ export const Dashboard: React.FC = () => {
 	const [isAdding, setIsAdding] = useState(false);
 	const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
 	const [loadingMore, setLoadingMore] = useState(false);
-	const [newEntry, setNewEntry] = useState<NewEntry>({
+	const [newEntry, setNewEntry] = useState<LexiconEntryForm>({
 		base_word: "",
 		phonetic: "",
 		part_of_speech: "noun",

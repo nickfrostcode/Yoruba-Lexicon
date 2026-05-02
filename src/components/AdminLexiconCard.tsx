@@ -4,25 +4,12 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle, Edit3, Trash2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-
-export interface AdminLexiconEntry {
-	id: string;
-	base_word: string;
-	syllables: number | null;
-	phonetic: string | null;
-	part_of_speech: string | null;
-	definition: string;
-	example_yoruba: string | null;
-	example_english: string | null;
-	status: "pending" | "approved";
-	created_at: string;
-	contributor_id: string | null;
-}
+import { LexiconEntry } from "../lib/types";
 
 interface AdminLexiconCardProps {
-	entry: AdminLexiconEntry;
+	entry: LexiconEntry;
 	onApprove: (id: string) => void;
-	onEdit: (entry: AdminLexiconEntry) => void;
+	onEdit: (entry: LexiconEntry) => void;
 	onDelete: (id: string) => void;
 }
 
@@ -62,7 +49,7 @@ export const AdminLexiconCard: React.FC<AdminLexiconCardProps> = ({
 			<div className='flex justify-between items-start mb-4 gap-2'>
 				<div className='min-w-0 flex-1'>
 					<h3 className='text-3xl font-serif font-bold text-brand-ink group-hover:text-brand-orange transition-colors wrap-break-word'>
-						{entry.base_word}
+						{entry.base_word}{" "}
 						<span className='text-brand-ink/40 text-sm'>
 							({entry.phonetic})
 						</span>

@@ -1,16 +1,7 @@
 /** @format */
 
 import { Save } from "lucide-react";
-
-export interface LexiconEntryForm {
-	base_word: string;
-	phonetic: string;
-	part_of_speech: string;
-	definition: string;
-	example_yoruba: string;
-	example_english: string;
-	syllables: string;
-}
+import { LexiconEntryForm } from "../lib/types";
 
 interface EntryFormProps {
 	entry: LexiconEntryForm;

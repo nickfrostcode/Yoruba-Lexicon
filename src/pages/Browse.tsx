@@ -7,23 +7,12 @@ import { PageHeader } from "../components/PageHeader";
 import { FilterPills } from "../components/FilterPills";
 import { Pagination } from "../components/Pagination";
 import { LexiconCard } from "../components/LexiconCard";
-
-interface Entry {
-	id: string;
-	base_word: string;
-   phonetic: string | null;
-   syllables: number | null;
-	part_of_speech: string | null;
-	definition: string;
-	example_yoruba: string | null;
-	example_english: string | null;
-	status: "pending" | "approved";
-}
+import { BrowseEntry } from "../lib/types";
 
 const ITEMS_PER_PAGE = 12; // divisible by 3, 2, and 1 — fits all grid layouts
 
 export const Browse: React.FC = () => {
-	const [entries, setEntries] = useState<Entry[]>([]);
+	const [entries, setEntries] = useState<BrowseEntry[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedLetter, setSelectedLetter] = useState<string>("all");
