@@ -19,25 +19,25 @@ import { toast } from "sonner";
 
 interface Contribution {
 	id: string;
-	word: string;
+	base_word: string;
+	phonetic: string;
 	definition: string;
 	status: "pending" | "approved";
 	created_at: string;
 }
 
-interface LexiconEntry {
-	word: string;
+interface NewEntry {
+	base_word: string;
 	phonetic: string;
 	part_of_speech: string;
 	definition: string;
 	example_yoruba: string;
 	example_english: string;
-	contributor_id: string;
-	status: string;
+	syllables: string;
 }
 
-const INITIAL_VISIBLE = 5;
-const LOAD_MORE_COUNT = 5;
+const INITIAL_VISIBLE = 6;
+const LOAD_MORE_COUNT = 6;
 
 export const Dashboard: React.FC = () => {
 	const { user } = useAuth();
@@ -46,13 +46,14 @@ export const Dashboard: React.FC = () => {
 	const [isAdding, setIsAdding] = useState(false);
 	const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
 	const [loadingMore, setLoadingMore] = useState(false);
-	const [newEntry, setNewEntry] = useState({
-		word: "",
+	const [newEntry, setNewEntry] = useState<NewEntry>({
+		base_word: "",
 		phonetic: "",
 		part_of_speech: "noun",
 		definition: "",
 		example_yoruba: "",
 		example_english: "",
+		syllables: "",
 	});
 
 	useEffect(() => {
@@ -64,7 +65,7 @@ export const Dashboard: React.FC = () => {
 	const fetchContributions = async (userId: string) => {
 		setLoading(true);
 		const { data, error } = await (supabase.from("lexicon_entries") as any)
-			.select("id, word, definition, status, created_at")
+			.select("id, base_word, phonetic, definition, status, created_at")
 			.eq("contributor_id", userId)
 			.order("created_at", { ascending: false });
 
@@ -90,11 +91,17 @@ export const Dashboard: React.FC = () => {
 		if (!user) return;
 		setLoading(true);
 		try {
+			const syllables = parseInt(newEntry.syllables);
+			if (syllables < 1) {
+				toast.error("Syllable count must be at least 1.");
+				return;
+			}
 			const { error } = await (
 				supabase.from("lexicon_entries") as any
 			).insert([
 				{
 					...newEntry,
+					syllables,
 					contributor_id: user.id,
 					status: "approved",
 				},
@@ -103,12 +110,13 @@ export const Dashboard: React.FC = () => {
 
 			setIsAdding(false);
 			setNewEntry({
-				word: "",
+				base_word: "",
 				phonetic: "",
 				part_of_speech: "noun",
 				definition: "",
 				example_yoruba: "",
 				example_english: "",
+				syllables: "",
 			});
 			fetchContributions(user.id);
 		} catch (err: any) {
@@ -221,13 +229,22 @@ export const Dashboard: React.FC = () => {
 							</h3>
 							<p className='text-white/80 text-sm leading-relaxed mb-6'>
 								Ensure your entries follow the standard Yorùbá
-								orthography. Include diacritics where necessary to
-								maintain phonetic accuracy.
+								orthography. Use the correct alphabet and add tone marks
+								in the phonetic input.
 							</p>
 							<ul className='space-y-3 text-sm font-medium'>
 								<li className='flex items-center space-x-2'>
 									<div className='w-1.5 h-1.5 bg-white rounded-full' />
-									<span>Use correct tone marks (à, á, a)</span>
+									<span>
+										Use the correct Yoruba alphabet (ẹ, ọ, etc.)
+									</span>
+								</li>
+								<li className='flex items-center space-x-2'>
+									<div className='w-1.5 h-1.5 bg-white rounded-full' />
+									<span>
+										Add tone marks directly in the phonetic input
+										(e.g., /ò.lù.kọ̀/)
+									</span>
 								</li>
 								<li className='flex items-center space-x-2'>
 									<div className='w-1.5 h-1.5 bg-white rounded-full' />
@@ -262,7 +279,7 @@ export const Dashboard: React.FC = () => {
 						)}
 					</div>
 
-					<div className='space-y-3'>
+					<div className='grid gap-3 grid-cols-1 md:grid-cols-2'>
 						<AnimatePresence mode='popLayout'>
 							{loading ? (
 								Array.from({ length: INITIAL_VISIBLE }).map((_, i) => (
@@ -289,12 +306,15 @@ export const Dashboard: React.FC = () => {
 															0.05
 														: 0,
 											}}
-											className='glass-card p-6 rounded-xl border border-brand-ink/5 flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0'
+											className='glass-card p-5 rounded-xl border border-brand-ink/5 flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0'
 										>
 											<div>
 												<div className='flex items-center space-x-3 mb-2'>
 													<h4 className='text-xl font-serif font-bold'>
-														{contribution.word}
+														{contribution.base_word}{" "}
+														<span className='text-brand-ink/40 text-sm'>
+															({contribution.phonetic})
+														</span>
 													</h4>
 													<span
 														className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
@@ -332,60 +352,6 @@ export const Dashboard: React.FC = () => {
 											</div>
 										</motion.div>
 									))}
-
-									{/* Load more skeleton */}
-									{loadingMore &&
-										Array.from({
-											length: Math.min(LOAD_MORE_COUNT, hiddenCount),
-										}).map((_, i) => (
-											<motion.div
-												key={`skeleton-${i}`}
-												initial={{ opacity: 0 }}
-												animate={{ opacity: 1 }}
-												className='h-24 rounded-xl bg-white/30 animate-pulse border border-brand-ink/5'
-											/>
-										))}
-
-									{/* Load More button */}
-									{hasMore && !loadingMore && (
-										<motion.div
-											initial={{ opacity: 0 }}
-											animate={{ opacity: 1 }}
-											className='pt-2'
-										>
-											<button
-												onClick={handleLoadMore}
-												className='w-full py-4 rounded-xl border-2 border-dashed border-brand-ink/10 
-													text-brand-ink/40 hover:text-brand-ink/70 hover:border-brand-ink/20
-													hover:bg-white/40 transition-all duration-200
-													flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-widest'
-											>
-												<ChevronDown size={16} />
-												Load{" "}
-												{Math.min(
-													LOAD_MORE_COUNT,
-													hiddenCount,
-												)}{" "}
-												more
-												<span className='text-brand-ink/25'>
-													({hiddenCount} remaining)
-												</span>
-											</button>
-										</motion.div>
-									)}
-
-									{/* All loaded indicator */}
-									{!hasMore &&
-										contributions.length > INITIAL_VISIBLE && (
-											<motion.div
-												initial={{ opacity: 0 }}
-												animate={{ opacity: 1 }}
-												className='pt-2 text-center text-xs font-bold uppercase tracking-widest text-brand-ink/20 py-4'
-											>
-												All {contributions.length} contributions
-												shown
-											</motion.div>
-										)}
 								</>
 							) : (
 								<div className='py-24 text-center border-2 border-dashed border-brand-ink/5 rounded-3xl'>
@@ -409,13 +375,59 @@ export const Dashboard: React.FC = () => {
 							)}
 						</AnimatePresence>
 					</div>
+
+					{/* Load more skeleton */}
+					{contributions.length > 0 &&
+						loadingMore &&
+						Array.from({
+							length: Math.min(LOAD_MORE_COUNT, hiddenCount),
+						}).map((_, i) => (
+							<motion.div
+								key={`skeleton-${i}`}
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								className='h-24 rounded-xl bg-white/30 animate-pulse border border-brand-ink/5'
+							/>
+						))}
+
+					{/* Load More button */}
+					{contributions.length > 0 && hasMore && !loadingMore && (
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							className='pt-2'
+						>
+							<button
+								onClick={handleLoadMore}
+								className='w-full py-4
+													flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-widest btn-primary mt-2'
+							>
+								<ChevronDown size={16} />
+								Load {Math.min(LOAD_MORE_COUNT, hiddenCount)} more
+								<span className='text-white/80'>
+									({hiddenCount} remaining)
+								</span>
+							</button>
+						</motion.div>
+					)}
+
+					{/* All loaded indicator */}
+					{!hasMore && contributions.length > INITIAL_VISIBLE && (
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							className='pt-2 text-center text-xs font-bold uppercase tracking-widest text-brand-ink/20 py-4 mt-2'
+						>
+							All {contributions.length} contributions shown
+						</motion.div>
+					)}
 				</div>
 			</div>
 
 			{/* Add Entry Modal */}
 			<AnimatePresence>
 				{isAdding && (
-					<div className='fixed inset-0 z-100 flex items-center justify-center p-4'>
+					<div className='fixed inset-0 z-100 flex items-center justify-center p-2'>
 						<motion.div
 							initial={{ opacity: 0 }}
 							animate={{ opacity: 1 }}
@@ -429,7 +441,7 @@ export const Dashboard: React.FC = () => {
 							exit={{ opacity: 0, scale: 0.9, y: 20 }}
 							className='relative w-full max-w-2xl bg-brand-cream rounded-3xl shadow-2xl overflow-hidden'
 						>
-							<div className='p-8 border-b border-brand-ink/5 flex justify-between items-center'>
+							<div className='px-6 py-4 border-b border-brand-ink/5 flex justify-between items-center'>
 								<h3 className='text-2xl font-serif font-bold'>
 									New Lexicon Entry
 								</h3>
@@ -443,35 +455,97 @@ export const Dashboard: React.FC = () => {
 
 							<form
 								onSubmit={handleSubmit}
-								className='p-8 max-h-[70vh] overflow-y-auto space-y-6'
+								className='p-6 max-h-[75vh] overflow-y-auto space-y-6'
 							>
-								<div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+								<div className='grid grid-cols-1 gap-4'>
 									<div className='space-y-2'>
 										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-											Word
+											Base Word{" "}
+											<span className='text-brand-orange'>*</span>
 										</label>
 										<input
 											type='text'
 											className='input-field'
-											placeholder='e.g. Àlàáfíà'
-											value={newEntry.word}
+											placeholder='e.g. Olukọ'
+											value={newEntry.base_word}
 											onChange={(e) =>
 												setNewEntry({
 													...newEntry,
-													word: e.target.value,
+													base_word: e.target.value,
 												})
 											}
 											required
 										/>
 									</div>
+
 									<div className='space-y-2'>
 										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-											Phonetic
+											Definition{" "}
+											<span className='text-brand-orange'>*</span>
 										</label>
+										<textarea
+											rows={3}
+											className='input-field py-3'
+											placeholder='Provide a clear definition in English...'
+											value={newEntry.definition}
+											onChange={(e) =>
+												setNewEntry({
+													...newEntry,
+													definition: e.target.value,
+												})
+											}
+											required
+										/>
+									</div>
+
+									<div className='space-y-2'>
+										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+											Part of Speech{" "}
+											<span className='text-brand-orange'>*</span>
+										</label>
+										<select
+											className='input-field appearance-none'
+											value={newEntry.part_of_speech}
+											onChange={(e) =>
+												setNewEntry({
+													...newEntry,
+													part_of_speech: e.target.value,
+												})
+											}
+											required
+										>
+											<option value='noun'>Orúkọ (Noun)</option>
+											<option value='pronoun'>
+												Àrọ̀pò orúkọ (Pronoun)
+											</option>
+											<option value='verb'>Òrò ìṣe (Verb)</option>
+											<option value='adjective'>
+												Àpèjúwe (Adjective)
+											</option>
+											<option value='adverb'>
+												Àrọ̀pò òrò ìṣe (Adverb)
+											</option>
+											<option value='conjunction'>
+												Òrò àsopò (Conjunction)
+											</option>
+											<option value='preposition'>
+												Òrò ìbáṣepọ̀ (Preposition)
+											</option>
+											<option value='pronominal'>
+												Àrọ̀pò orúkọ àfikún (Pronominal)
+											</option>
+										</select>
+									</div>
+
+									<div className='space-y-2'>
+										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+											Phonetic (with tone marks)
+										</label>{" "}
+										<span className='text-brand-orange'>*</span>
 										<input
 											type='text'
 											className='input-field'
-											placeholder='e.g. /à.là.á.fí.à/'
+											placeholder='e.g. /ò.lù.kọ̀/'
 											value={newEntry.phonetic}
 											onChange={(e) =>
 												setNewEntry({
@@ -479,120 +553,84 @@ export const Dashboard: React.FC = () => {
 													phonetic: e.target.value,
 												})
 											}
+											required
 										/>
 									</div>
-								</div>
 
-								<div className='space-y-2'>
-									<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-										Part of Speech
-									</label>
-									<select
-										className='input-field appearance-none'
-										value={newEntry.part_of_speech}
-										onChange={(e) =>
-											setNewEntry({
-												...newEntry,
-												part_of_speech: e.target.value,
-											})
-										}
-									>
-										<option value='noun'>Orúkọ (Noun)</option>
-										<option value='pronoun'>
-											Àrọ̀pò orúkọ (Pronoun)
-										</option>
-										<option value='verb'>Òrò ìṣe (Verb)</option>
-										<option value='adjective'>
-											Àpèjúwe (Adjective)
-										</option>
-										<option value='adverb'>
-											Àrọ̀pò òrò ìṣe (Adverb)
-										</option>
-										<option value='conjunction'>
-											Òrò àsopò (Conjunction)
-										</option>
-										<option value='preposition'>
-											Òrò ìbáṣepọ̀ (Preposition)
-										</option>
-										<option value='pronominal'>
-											Àrọ̀pò orúkọ àfikún (Pronominal)
-										</option>
-									</select>
-								</div>
+									<div className='space-y-2'>
+										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+											Syllables
+										</label>
+										<input
+											type='number'
+											className='input-field'
+											min='1'
+											placeholder='e.g 3'
+											value={newEntry.syllables}
+											onChange={(e) =>
+												setNewEntry({
+													...newEntry,
+													syllables: e.target.value,
+												})
+											}
+										/>
+									</div>
 
-								<div className='space-y-2'>
-									<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-										Definition
-									</label>
-									<textarea
-										rows={3}
-										className='input-field py-4'
-										placeholder='Provide a clear definition in English...'
-										value={newEntry.definition}
-										onChange={(e) =>
-											setNewEntry({
-												...newEntry,
-												definition: e.target.value,
-											})
-										}
-										required
-									/>
-								</div>
+									<div className='space-y-2'>
+										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+											Example (Yorùbá)
+										</label>
+										<input
+											type='text'
+											className='input-field'
+											placeholder='e.g. Òlùkọ̀ mi dùn'
+											value={newEntry.example_yoruba}
+											onChange={(e) =>
+												setNewEntry({
+													...newEntry,
+													example_yoruba: e.target.value,
+												})
+											}
+										/>
+									</div>
 
-								<div className='space-y-2'>
-									<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-										Example (Yorùbá)
-									</label>
-									<input
-										type='text'
-										className='input-field'
-										placeholder='Use the word in a sentence...'
-										value={newEntry.example_yoruba}
-										onChange={(e) =>
-											setNewEntry({
-												...newEntry,
-												example_yoruba: e.target.value,
-											})
-										}
-									/>
-								</div>
+									<div className='space-y-2'>
+										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+											Example (English Translation)
+										</label>
+										<input
+											type='text'
+											className='input-field'
+											placeholder='e.g. My teacher is nice'
+											value={newEntry.example_english}
+											onChange={(e) =>
+												setNewEntry({
+													...newEntry,
+													example_english: e.target.value,
+												})
+											}
+										/>
+									</div>
 
-								<div className='space-y-2'>
-									<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-										Example (English Translation)
-									</label>
-									<input
-										type='text'
-										className='input-field'
-										placeholder='Provide the English translation...'
-										value={newEntry.example_english}
-										onChange={(e) =>
-											setNewEntry({
-												...newEntry,
-												example_english: e.target.value,
-											})
-										}
-									/>
-								</div>
-
-								<div className='pt-4 flex space-x-4'>
-									<button
-										type='button'
-										onClick={() => setIsAdding(false)}
-										className='btn-secondary flex-1'
-									>
-										Cancel
-									</button>
-									<button
-										type='submit'
-										disabled={loading}
-										className='btn-primary flex-1 flex items-center justify-center space-x-2'
-									>
-										<Save size={18} />
-										<span>
-											{loading ? "Saving..." : "Save Entry"}
-										</span>
-									</button>
+									<div className='pt-4 flex flex-col md:flex-row gap-4'>
+										<button
+											type='button'
+											onClick={() => setIsAdding(false)}
+											className='btn-secondary flex-1'
+										>
+											Cancel
+										</button>
+										<button
+											type='submit'
+											disabled={loading}
+											className='btn-primary flex-1 flex items-center justify-center space-x-2'
+										>
+											<Save size={18} />
+											<span>
+												{loading ? "Saving..." : "Save Entry"}
+											</span>
+										</button>
+									</div>
 								</div>
 							</form>
 						</motion.div>
