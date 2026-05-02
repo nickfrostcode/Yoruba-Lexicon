@@ -17,24 +17,8 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 
-interface Contribution {
-	id: string;
-	word: string;
-	definition: string;
-	status: "pending" | "approved";
-	created_at: string;
-}
-
-interface LexiconEntry {
-	word: string;
-	phonetic: string;
-	part_of_speech: string;
-	definition: string;
-	example_yoruba: string;
-	example_english: string;
-	contributor_id: string;
-	status: string;
-}
+import { Contribution, LexiconEntry } from "../types";
+import { StatItem } from "../components/StatItem";
 
 const INITIAL_VISIBLE = 5;
 const LOAD_MORE_COUNT = 5;
@@ -603,16 +587,3 @@ export const Dashboard: React.FC = () => {
 	);
 };
 
-const StatItem: React.FC<{
-	icon: React.ReactNode;
-	label: string;
-	value: number;
-}> = ({ icon, label, value }) => (
-	<div className='flex items-center justify-between'>
-		<div className='flex items-center space-x-3'>
-			{icon}
-			<span className='text-sm font-medium text-brand-ink/60'>{label}</span>
-		</div>
-		<span className='text-lg font-bold'>{value}</span>
-	</div>
-);

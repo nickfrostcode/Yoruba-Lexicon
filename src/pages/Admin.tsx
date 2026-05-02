@@ -17,18 +17,9 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 
-interface Entry {
-	id: string;
-	word: string;
-	phonetic: string | null;
-	part_of_speech: string | null;
-	definition: string;
-	example_yoruba: string | null;
-	example_english: string | null;
-	status: "pending" | "approved";
-	created_at: string;
-	contributor_id: string | null;
-}
+import { Entry } from "../types";
+import { Pagination } from "../components/Pagination";
+import { AdminLexiconCard } from "../components/AdminLexiconCard";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -283,59 +274,11 @@ export const Admin: React.FC = () => {
 			</div>
 
 			{!loading && totalPages > 1 && (
-				<div className='mt-16 flex items-center justify-center gap-2'>
-					<button
-						type='button'
-						onClick={() => handlePageChange(currentPage - 1)}
-						disabled={currentPage === 1}
-						className='flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all
-							disabled:opacity-30 disabled:cursor-not-allowed
-							bg-white/50 text-brand-ink/60 hover:bg-white hover:text-brand-ink
-							disabled:hover:bg-white/50 disabled:hover:text-brand-ink/60'
-					>
-						<ChevronLeft size={16} />
-						Prev
-					</button>
-
-					<div className='flex items-center gap-1.5'>
-						{getPageNumbers().map((page, i) =>
-							page === "…" ? (
-								<span
-									key={`ellipsis-${i}`}
-									className='w-10 text-center text-brand-ink/30 font-bold select-none'
-								>
-									…
-								</span>
-							) : (
-								<button
-									type='button'
-									key={page}
-									onClick={() => handlePageChange(page as number)}
-									className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
-										currentPage === page
-											? "bg-brand-orange text-white shadow-md shadow-brand-orange/20"
-											: "bg-white/50 text-brand-ink/60 hover:bg-white hover:text-brand-ink"
-									}`}
-								>
-									{page}
-								</button>
-							),
-						)}
-					</div>
-
-					<button
-						type='button'
-						onClick={() => handlePageChange(currentPage + 1)}
-						disabled={currentPage === totalPages}
-						className='flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all
-							disabled:opacity-30 disabled:cursor-not-allowed
-							bg-white/50 text-brand-ink/60 hover:bg-white hover:text-brand-ink
-							disabled:hover:bg-white/50 disabled:hover:text-brand-ink/60'
-					>
-						Next
-						<ChevronRight size={16} />
-					</button>
-				</div>
+				<Pagination
+					currentPage={currentPage}
+					totalPages={totalPages}
+					onPageChange={handlePageChange}
+				/>
 			)}
 
 			<AnimatePresence>
@@ -521,153 +464,3 @@ export const Admin: React.FC = () => {
 	);
 };
 
-const AdminLexiconCard: React.FC<{
-	entry: Entry;
-	onApprove: (id: string) => void;
-	onEdit: (entry: Entry) => void;
-	onDelete: (id: string) => void;
-}> = ({ entry, onApprove, onEdit, onDelete }) => {
-	const [isExpanded, setIsExpanded] = useState(false);
-
-	const speak = (text: string) => {
-		speechSynthesis.cancel();
-		const voices = speechSynthesis.getVoices();
-		const yorubaVoice = voices.find((v) => v.lang === "yo-NG");
-		if (yorubaVoice) {
-			const utterance = new SpeechSynthesisUtterance(text);
-			utterance.voice = yorubaVoice;
-			utterance.lang = "yo-NG";
-			speechSynthesis.speak(utterance);
-			return;
-		}
-		toast.error("Yoruba voice not available on your device.");
-	};
-
-	return (
-		<div
-			className={`glass-card p-8 rounded-2xl transition-all duration-300 cursor-pointer group hover:border-brand-orange/30 ${
-				isExpanded
-					? "ring-2 ring-brand-orange/20 shadow-2xl"
-					: "hover:shadow-lg"
-			}`}
-			onClick={() => setIsExpanded(!isExpanded)}
-		>
-			<div className='flex justify-between items-start mb-4 gap-2'>
-				<div className='min-w-0 flex-1'>
-					<h3 className='text-3xl font-serif font-bold text-brand-ink group-hover:text-brand-orange transition-colors wrap-break-word'>
-						{entry.word}
-					</h3>
-					<div className='flex flex-wrap items-center gap-x-3 gap-y-1 mt-1'>
-						<span
-							className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-								entry.status === "approved"
-									? "bg-green-100 text-green-600"
-									: "bg-brand-orange/10 text-brand-orange"
-							}`}
-						>
-							{entry.status}
-						</span>
-						<span className='text-xs font-bold uppercase tracking-widest text-brand-orange'>
-							{entry.part_of_speech || "N/A"}
-						</span>
-						<span className='text-brand-ink/30 text-xs font-mono truncate max-w-35'>
-							{entry.phonetic || "/.../"}
-						</span>
-					</div>
-				</div>
-				<div
-					className='flex items-center gap-1 shrink-0'
-					onClick={(e) => e.stopPropagation()}
-				>
-					{entry.status === "pending" && (
-						<button
-							type='button'
-							onClick={() => onApprove(entry.id)}
-							className='p-2 rounded-xl bg-green-500 text-white hover:bg-green-600 transition-colors'
-							title='Approve'
-						>
-							<CheckCircle size={20} />
-						</button>
-					)}
-					<button
-						type='button'
-						onClick={() => onEdit(entry)}
-						className='p-2 rounded-xl bg-brand-ink text-white hover:bg-brand-ink/80 transition-colors'
-						title='Edit'
-					>
-						<Edit3 size={18} />
-					</button>
-					<button
-						type='button'
-						onClick={() => onDelete(entry.id)}
-						className='p-2 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors'
-						title='Delete'
-					>
-						<Trash2 size={18} />
-					</button>
-					<button
-						type='button'
-						className='text-brand-ink/20 hover:text-brand-orange transition-colors p-2'
-						title='Pronounce'
-						onClick={() => speak(entry.word)}
-					>
-						<Volume2 size={22} />
-					</button>
-				</div>
-			</div>
-
-			<p
-				className={`text-brand-ink/70 leading-relaxed mb-4 ${isExpanded ? "" : "line-clamp-2"}`}
-			>
-				{entry.definition}
-			</p>
-
-			<AnimatePresence>
-				{isExpanded && (
-					<motion.div
-						initial={{ opacity: 0, height: 0 }}
-						animate={{ opacity: 1, height: "auto" }}
-						exit={{ opacity: 0, height: 0 }}
-						className='overflow-hidden pt-4 border-t border-brand-ink/5'
-					>
-						<div className='space-y-6'>
-							<p className='text-xs font-bold uppercase tracking-widest text-brand-ink/40'>
-								Submitted{" "}
-								<span className='text-brand-ink/60 font-medium normal-case'>
-									{new Date(entry.created_at).toLocaleString()}
-								</span>
-							</p>
-							{entry.example_yoruba && (
-								<div>
-									<h4 className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 mb-2'>
-										Example (Yorùbá)
-									</h4>
-									<p className='text-lg font-serif italic text-brand-ink/80 leading-relaxed'>
-										"{entry.example_yoruba}"
-									</p>
-								</div>
-							)}
-							{entry.example_english && (
-								<div>
-									<h4 className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 mb-2'>
-										Translation (English)
-									</h4>
-									<p className='text-brand-ink/60 leading-relaxed'>
-										"{entry.example_english}"
-									</p>
-								</div>
-							)}
-						</div>
-					</motion.div>
-				)}
-			</AnimatePresence>
-
-			{!isExpanded && (
-				<div className='flex items-center text-xs font-bold uppercase tracking-widest text-brand-ink/30 mt-2 group-hover:text-brand-orange transition-colors'>
-					<span>View Details</span>
-					<ChevronRight size={14} className='ml-1' />
-				</div>
-			)}
-		</div>
-	);
-};
