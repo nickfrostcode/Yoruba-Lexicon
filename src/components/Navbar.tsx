@@ -97,7 +97,7 @@ export const Navbar: React.FC = () => {
 								<Link
 									key={link.path}
 									to={link.path}
-									className={`relative flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+									className={`relative flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
 										isActive
 											? "text-brand-orange"
 											: "text-brand-ink/60 hover:text-brand-ink hover:bg-brand-ink/5"
