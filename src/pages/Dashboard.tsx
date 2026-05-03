@@ -228,32 +228,38 @@ export const Dashboard: React.FC = () => {
 								Contributor Guide
 							</h3>
 							<p className='text-white/80 text-sm leading-relaxed mb-6'>
-								Ensure your entries follow the standard Yorùbá
-								orthography. Use the correct alphabet and add tone marks
-								in the phonetic input.
+								Ensure your entries follow standard Yorùbá orthography.
+								Use correct characters and tone patterns to maintain
+								accurate pronunciation.
 							</p>
 							<ul className='space-y-3 text-sm font-medium'>
 								<li className='flex items-center space-x-2'>
 									<div className='w-1.5 h-1.5 bg-white rounded-full' />
 									<span>
-										Use the correct Yoruba alphabet (ẹ, ọ, etc.)
+										Use the correct Yoruba letters (ẹ, ọ are different
+										from e, o)
 									</span>
 								</li>
 								<li className='flex items-center space-x-2'>
 									<div className='w-1.5 h-1.5 bg-white rounded-full' />
 									<span>
-										Add tone marks directly in the phonetic input
-										(e.g., /ò.lù.kọ̀/)
+										Enter tones using "d" (low), "r" (high), "m"
+										(mid). Example: olùkọ́ → m-d-r
 									</span>
 								</li>
 								<li className='flex items-center space-x-2'>
 									<div className='w-1.5 h-1.5 bg-white rounded-full' />
-									<span>Provide clear, concise definitions</span>
+									<span>
+										Avoid duplicate words (check existing entries
+										first)
+									</span>
 								</li>
-								<li className='flex items-center space-x-2'>
+								{/* <li className='flex items-center space-x-2'>
 									<div className='w-1.5 h-1.5 bg-white rounded-full' />
-									<span>Include usage examples</span>
-								</li>
+									<span>
+										Submit only words that match your assigned letter
+									</span>
+								</li> */}
 							</ul>
 						</div>
 					</div>
