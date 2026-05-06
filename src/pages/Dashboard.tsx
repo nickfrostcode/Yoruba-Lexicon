@@ -1,6 +1,7 @@
 /** @format */
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -10,33 +11,64 @@ import {
 	AlertCircle,
 	User,
 	Trash2,
-	Save,
-	X,
+	Edit3,
 	ChevronDown,
+	LayoutDashboard,
+	BookA,
+	Layers,
+	Save,
+	Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { Contribution, LexiconEntryForm } from "../lib/types";
+import { Contribution, BaseWord } from "../lib/types";
+import { normalizeWord, getAlphabetChar } from "../lib/utils";
+import { YORUBA_ALPHABET, PARTS_OF_SPEECH } from "../lib/constants";
+import { YorubaKeyboard } from "../components/YorubaKeyboard";
+
+import { EditVariantModal } from "../components/EditVariantModal";
+import { Loader } from "../components/Loader";
 
 const INITIAL_VISIBLE = 6;
 const LOAD_MORE_COUNT = 6;
 
+type Tab = "overview" | "base-words" | "variants";
+
 export const Dashboard: React.FC = () => {
+	const navigate = useNavigate();
 	const { user } = useAuth();
+	const [activeTab, setActiveTab] = useState<Tab>("overview");
+	
+	// Modals
+	const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
+	
+	// Overview State
 	const [contributions, setContributions] = useState<Contribution[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [isAdding, setIsAdding] = useState(false);
+	const [loadingContributions, setLoadingContributions] = useState(true);
 	const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
 	const [loadingMore, setLoadingMore] = useState(false);
-	const [newEntry, setNewEntry] = useState<LexiconEntryForm>({
-		base_word: "",
+
+	// Base Word Form State
+	const [baseWordInput, setBaseWordInput] = useState("");
+	const [baseWordSyllables, setBaseWordSyllables] = useState("");
+	const [baseWordNote, setBaseWordNote] = useState("");
+	const [isSubmittingBaseWord, setIsSubmittingBaseWord] = useState(false);
+
+	// Variants Flow State
+	const [selectedLetter, setSelectedLetter] = useState("A");
+	const [baseWords, setBaseWords] = useState<BaseWord[]>([]);
+	const [loadingBaseWords, setLoadingBaseWords] = useState(false);
+	const [selectedBaseWord, setSelectedBaseWord] = useState<BaseWord | null>(null);
+	
+	const [variantForm, setVariantForm] = useState({
+		word: "",
 		phonetic: "",
 		part_of_speech: "noun",
 		definition: "",
 		example_yoruba: "",
 		example_english: "",
-		syllables: "",
 	});
+	const [isSubmittingVariant, setIsSubmittingVariant] = useState(false);
 
 	useEffect(() => {
 		if (user) {
@@ -44,10 +76,16 @@ export const Dashboard: React.FC = () => {
 		}
 	}, [user]);
 
+	useEffect(() => {
+		if (activeTab === "variants" && !selectedBaseWord) {
+			fetchBaseWordsByLetter(selectedLetter);
+		}
+	}, [selectedLetter, activeTab, selectedBaseWord]);
+
 	const fetchContributions = async (userId: string) => {
-		setLoading(true);
+		setLoadingContributions(true);
 		const { data, error } = await (supabase.from("lexicon_entries") as any)
-			.select("id, base_word, phonetic, definition, status, created_at")
+			.select("id, word, phonetic, definition, status, created_at, base_word_id, base_word:base_words(id, word, normalized_word)")
 			.eq("contributor_id", userId)
 			.order("created_at", { ascending: false });
 
@@ -55,62 +93,34 @@ export const Dashboard: React.FC = () => {
 			console.error("Error fetching contributions:", error);
 		} else {
 			setContributions(data || []);
-			setVisibleCount(INITIAL_VISIBLE); // reset on refresh
+			setVisibleCount(INITIAL_VISIBLE);
 		}
-		setLoading(false);
+		setLoadingContributions(false);
+	};
+
+	const fetchBaseWordsByLetter = async (letter: string) => {
+		setLoadingBaseWords(true);
+		const { data, error } = await supabase
+			.from("base_words")
+			.select("*")
+			.eq("alphabet", letter)
+			.order("word", { ascending: true });
+
+		if (!error && data) {
+			setBaseWords(data);
+		}
+		setLoadingBaseWords(false);
 	};
 
 	const handleLoadMore = async () => {
 		setLoadingMore(true);
-		// Small delay so the skeleton feels intentional, not instant
 		await new Promise((r) => setTimeout(r, 400));
 		setVisibleCount((prev) => prev + LOAD_MORE_COUNT);
 		setLoadingMore(false);
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!user) return;
-		setLoading(true);
-		try {
-			const syllables = parseInt(newEntry.syllables);
-			if (syllables < 1) {
-				toast.error("Syllable count must be at least 1.");
-				return;
-			}
-			const { error } = await (
-				supabase.from("lexicon_entries") as any
-			).insert([
-				{
-					...newEntry,
-					syllables,
-					contributor_id: user.id,
-					status: "approved",
-				},
-			]);
-			if (error) throw error;
-
-			setIsAdding(false);
-			setNewEntry({
-				base_word: "",
-				phonetic: "",
-				part_of_speech: "noun",
-				definition: "",
-				example_yoruba: "",
-				example_english: "",
-				syllables: "",
-			});
-			fetchContributions(user.id);
-		} catch (err: any) {
-			toast.error(err.message || "Error submitting entry.");
-		} finally {
-			setLoading(false);
-		}
-	};
-
 	const deleteEntry = async (id: string) => {
-		if (!confirm("Are you sure you want to delete this contribution?"))
-			return;
+		if (!confirm("Are you sure you want to delete this contribution?")) return;
 
 		const { error } = await (supabase.from("lexicon_entries") as any)
 			.delete()
@@ -122,509 +132,506 @@ export const Dashboard: React.FC = () => {
 		}
 	};
 
-	const visibleContributions = contributions.slice(0, visibleCount);
-	const hasMore = visibleCount < contributions.length;
-	const hiddenCount = contributions.length - visibleCount;
+	const submitBaseWord = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!user) return;
+		if (!baseWordInput.trim()) {
+			toast.error("Word is required");
+			return;
+		}
+
+		const syllables = parseInt(baseWordSyllables);
+		if (isNaN(syllables) || syllables < 1) {
+			toast.error("Syllable count must be at least 1.");
+			return;
+		}
+
+		setIsSubmittingBaseWord(true);
+		try {
+			const word = baseWordInput.trim();
+			const normalized = normalizeWord(word);
+			const alphabet = getAlphabetChar(word);
+
+			const { error } = await supabase.from("base_words").insert([
+				{
+					word,
+					normalized_word: normalized,
+					alphabet,
+					syllables,
+					note: baseWordNote,
+					created_by: user.id,
+				},
+			]);
+
+			if (error) {
+				if (error.code === '23505') {
+					toast.error("This base word already exists.");
+				} else {
+					throw error;
+				}
+				return;
+			}
+			
+			toast.success("Base word added successfully!");
+			setBaseWordInput("");
+			setBaseWordSyllables("");
+			setBaseWordNote("");
+		} catch (err: any) {
+			toast.error(err.message || "Error submitting base word.");
+		} finally {
+			setIsSubmittingBaseWord(false);
+		}
+	};
+
+	const submitVariant = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!user || !selectedBaseWord) return;
+		if (!variantForm.word.trim()) {
+			toast.error("Fully tone-marked word is required.");
+			return;
+		}
+
+		setIsSubmittingVariant(true);
+		try {
+			const { error } = await supabase.from("lexicon_entries").insert([
+				{
+					base_word_id: selectedBaseWord.id,
+					word: variantForm.word.trim(),
+					phonetic: variantForm.phonetic,
+					part_of_speech: variantForm.part_of_speech,
+					definition: variantForm.definition,
+					example_yoruba: variantForm.example_yoruba,
+					example_english: variantForm.example_english,
+					contributor_id: user.id,
+					status: "approved", // User request: auto-approve via UI submit
+				},
+			]);
+			if (error) throw error;
+			toast.success("Variant submitted successfully!");
+			setVariantForm({
+				word: "",
+				phonetic: "",
+				part_of_speech: "noun",
+				definition: "",
+				example_yoruba: "",
+				example_english: "",
+			});
+			setSelectedBaseWord(null);
+			fetchContributions(user.id);
+		} catch (err: any) {
+			toast.error(err.message || "Error submitting variant.");
+		} finally {
+			setIsSubmittingVariant(false);
+		}
+	};
+
+	const insertCharToVariantWord = (char: string) => {
+		setVariantForm(prev => ({ ...prev, word: prev.word + char }));
+	};
 
 	const displayFirstName =
 		user?.full_name?.trim()?.split(/\s+/)[0] ||
 		user?.email?.split("@")[0] ||
 		"Contributor";
 
+	const visibleContributions = contributions.slice(0, visibleCount);
+	const hasMore = visibleCount < contributions.length;
+	const hiddenCount = contributions.length - visibleCount;
+
 	return (
 		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
-			<div className='flex flex-col md:flex-row justify-between items-start md:items-center mb-12 space-y-6 md:space-y-0'>
+			<div className='flex items-center space-x-4 mb-12'>
+				<div className='w-16 h-16 rounded-full bg-brand-orange/10 flex items-center justify-center text-brand-orange font-bold text-2xl font-serif'>
+					{displayFirstName.charAt(0).toUpperCase()}
+				</div>
 				<div>
-					<h1 className='text-4xl md:text-6xl font-serif font-bold mb-4'>
-						Dashboard
+					<h1 className='text-4xl font-serif font-bold'>
+						Hello, {displayFirstName}
 					</h1>
-					<div className='flex items-center space-x-4 text-brand-ink/60'>
-						<div className='flex items-center space-x-2'>
-							<User size={18} />
-							<span className='font-medium'>
-								{displayFirstName}
-								{user?.email ? ` · ${user.email}` : ""}
-							</span>
-						</div>
-					</div>
+					<p className='text-brand-ink/60 font-medium'>Manage your contributions</p>
 				</div>
-
-				<button
-					onClick={() => setIsAdding(true)}
-					className='btn-primary flex items-center space-x-2'
-				>
-					<Plus size={20} />
-					<span>New Contribution</span>
-				</button>
 			</div>
 
-			<div className='grid grid-cols-1 lg:grid-cols-3 gap-12'>
-				{/* Stats Column */}
-				<div className='lg:col-span-1 space-y-8'>
-					<div className='lg:sticky flex flex-col gap-5 top-23'>
-						<div className='glass-card p-8 rounded-3xl border border-brand-ink/5 shadow-md'>
-							<h3 className='text-xl font-serif font-bold mb-6'>
-								Your Impact
-							</h3>
-							<div className='space-y-6'>
-								<StatItem
-									icon={
-										<CheckCircle
-											size={20}
-											className='text-green-500'
-										/>
-									}
-									label='Approved'
-									value={
-										contributions.filter(
-											(c) => c.status === "approved",
-										).length
-									}
-								/>
-								<StatItem
-									icon={
-										<Clock size={20} className='text-brand-orange' />
-									}
-									label='Pending'
-									value={
-										contributions.filter(
-											(c) => c.status === "pending",
-										).length
-									}
-								/>
-								<StatItem
-									icon={
-										<AlertCircle
-											size={20}
-											className='text-brand-ink/20'
-										/>
-									}
-									label='Total Contributions'
-									value={contributions.length}
-								/>
-							</div>
-						</div>
-
-						<div className='p-8 rounded-3xl bg-brand-orange text-white'>
-							<h3 className='text-xl font-serif font-bold mb-4'>
-								Contributor Guide
-							</h3>
-							<p className='text-white/80 text-sm leading-relaxed mb-6'>
-								Ensure your entries follow standard Yorùbá orthography.
-								Use correct characters and tone patterns to maintain
-								accurate pronunciation.
-							</p>
-							<ul className='space-y-3 text-sm font-medium'>
-								<li className='flex items-center space-x-2'>
-									<div className='w-1.5 h-1.5 bg-white rounded-full' />
-									<span>
-										Use the correct Yoruba letters (ẹ, ọ are different
-										from e, o)
-									</span>
-								</li>
-								<li className='flex items-center space-x-2'>
-									<div className='w-1.5 h-1.5 bg-white rounded-full' />
-									<span>
-										Enter tones using "d" (low), "r" (high), "m"
-										(mid). Example: olùkọ́ → m-d-r
-									</span>
-								</li>
-								<li className='flex items-center space-x-2'>
-									<div className='w-1.5 h-1.5 bg-white rounded-full' />
-									<span>
-										Avoid duplicate words (check existing entries
-										first)
-									</span>
-								</li>
-								{/* <li className='flex items-center space-x-2'>
-									<div className='w-1.5 h-1.5 bg-white rounded-full' />
-									<span>
-										Submit only words that match your assigned letter
-									</span>
-								</li> */}
-							</ul>
-						</div>
-					</div>
+			<div className='grid grid-cols-1 md:grid-cols-4 gap-8'>
+				{/* Sidebar */}
+				<div className='md:col-span-1 space-y-2'>
+					<button
+						onClick={() => setActiveTab("overview")}
+						className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
+							activeTab === "overview"
+								? "bg-brand-orange text-white shadow-md font-bold"
+								: "text-brand-ink/60 hover:bg-brand-orange/10 hover:text-brand-orange font-medium"
+						}`}
+					>
+						<LayoutDashboard size={20} />
+						<span>Overview</span>
+					</button>
+					<button
+						onClick={() => setActiveTab("base-words")}
+						className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
+							activeTab === "base-words"
+								? "bg-brand-orange text-white shadow-md font-bold"
+								: "text-brand-ink/60 hover:bg-brand-orange/10 hover:text-brand-orange font-medium"
+						}`}
+					>
+						<BookA size={20} />
+						<span>Base Words</span>
+					</button>
+					<button
+						onClick={() => setActiveTab("variants")}
+						className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
+							activeTab === "variants"
+								? "bg-brand-orange text-white shadow-md font-bold"
+								: "text-brand-ink/60 hover:bg-brand-orange/10 hover:text-brand-orange font-medium"
+						}`}
+					>
+						<Layers size={20} />
+						<span>Variants</span>
+					</button>
 				</div>
 
-				{/* Contributions List */}
-				<div className='lg:col-span-2'>
-					<div className='flex items-baseline justify-between mb-8'>
-						<h3 className='text-2xl font-serif font-bold'>
-							Recent Contributions
-						</h3>
-						{!loading && contributions.length > 0 && (
-							<span className='text-sm text-brand-ink/40 font-medium'>
-								Showing{" "}
-								<span className='text-brand-ink/70 font-bold'>
-									{Math.min(visibleCount, contributions.length)}
-								</span>{" "}
-								of{" "}
-								<span className='text-brand-ink/70 font-bold'>
-									{contributions.length}
-								</span>
-							</span>
-						)}
-					</div>
-
-					<div className='grid gap-3 grid-cols-1 md:grid-cols-2'>
-						<AnimatePresence mode='popLayout'>
-							{loading ? (
-								Array.from({ length: INITIAL_VISIBLE }).map((_, i) => (
-									<div
-										key={i}
-										className='h-32 rounded-xl bg-white/30 animate-pulse border border-brand-ink/5'
+				{/* Main Content Area */}
+				<div className='md:col-span-3'>
+					{activeTab === "overview" && (
+						<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className='space-y-8'>
+							<div className='grid grid-cols-1 sm:grid-cols-3 gap-6'>
+								<div className='glass-card p-6 rounded-2xl border border-brand-ink/5'>
+									<StatItem
+										icon={<CheckCircle size={24} className='text-green-500' />}
+										label='Approved'
+										value={contributions.filter((c) => c.status === "approved").length}
 									/>
-								))
-							) : contributions.length > 0 ? (
-								<>
-									{visibleContributions.map((contribution, index) => (
-										<motion.div
-											key={contribution.id}
-											layout
-											initial={{ opacity: 0, x: -20 }}
-											animate={{ opacity: 1, x: 0 }}
-											exit={{ opacity: 0, x: 20 }}
-											transition={{
-												delay:
-													index >= visibleCount - LOAD_MORE_COUNT
-														? (index -
-																(visibleCount -
-																	LOAD_MORE_COUNT)) *
-															0.05
-														: 0,
-											}}
-											className='glass-card p-5 rounded-xl border border-brand-ink/5 flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0'
-										>
-											<div>
-												<div className='flex items-center space-x-3 mb-2'>
-													<h4 className='text-xl font-serif font-bold'>
-														{contribution.base_word}{" "}
-														<span className='text-brand-ink/40 text-sm'>
-															({contribution.phonetic})
+								</div>
+								<div className='glass-card p-6 rounded-2xl border border-brand-ink/5'>
+									<StatItem
+										icon={<Clock size={24} className='text-brand-orange' />}
+										label='Pending'
+										value={contributions.filter((c) => c.status === "pending").length}
+									/>
+								</div>
+								<div className='glass-card p-6 rounded-2xl border border-brand-ink/5'>
+									<StatItem
+										icon={<AlertCircle size={24} className='text-brand-ink/20' />}
+										label='Total'
+										value={contributions.length}
+									/>
+								</div>
+							</div>
+
+							<div className='p-8 rounded-3xl bg-brand-orange text-white shadow-lg'>
+								<h3 className='text-2xl font-serif font-bold mb-4'>How to Contribute</h3>
+								<p className='text-white/80 leading-relaxed mb-6'>
+									Our lexicon follows a Base-Word → Variant architecture. This ensures a clean grouping of dialects and precise definitions.
+								</p>
+								<div className="grid md:grid-cols-2 gap-6">
+									<div className="bg-white/10 p-5 rounded-2xl">
+										<h4 className="font-bold flex items-center space-x-2 mb-2">
+											<span className="w-6 h-6 rounded-full bg-white text-brand-orange flex items-center justify-center text-sm">1</span>
+											<span>Add a Base Word</span>
+										</h4>
+										<p className="text-sm text-white/80">Check if the root word exists under "Base Words". If it doesn't, add it without specific dialectal tone marks (e.g. Olukọ).</p>
+									</div>
+									<div className="bg-white/10 p-5 rounded-2xl">
+										<h4 className="font-bold flex items-center space-x-2 mb-2">
+											<span className="w-6 h-6 rounded-full bg-white text-brand-orange flex items-center justify-center text-sm">2</span>
+											<span>Add carefully marked Variants</span>
+										</h4>
+										<p className="text-sm text-white/80">Under "Variants", find your base word and add your fully tone-marked word, along with meaning and phonetic signature.</p>
+									</div>
+								</div>
+							</div>
+
+							<div>
+								<h3 className='text-2xl font-serif font-bold mb-6'>My Contributions</h3>
+								<div className='grid gap-4 grid-cols-1 md:grid-cols-2'>
+									{loadingContributions ? (
+										<div className="col-span-2"><Loader text="Loading contributions..." /></div>
+									) : contributions.length > 0 ? (
+										visibleContributions.map((contribution) => (
+											<div key={contribution.id} className='glass-card p-5 rounded-xl border border-brand-ink/5 flex flex-col justify-between'>
+												<div>
+													<div className='flex items-center space-x-3 mb-2'>
+														<h4 className='text-xl font-serif font-bold'>
+															{contribution.word}{" "}
+															{contribution.phonetic && <span className='text-brand-ink/40 text-sm'>({contribution.phonetic})</span>}
+														</h4>
+														<span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+																contribution.status === "approved" ? "bg-green-100 text-green-600" : "bg-brand-orange/10 text-brand-orange"
+															}`}>
+															{contribution.status}
 														</span>
-													</h4>
-													<span
-														className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-															contribution.status === "approved"
-																? "bg-green-100 text-green-600"
-																: "bg-brand-orange/10 text-brand-orange"
-														}`}
-													>
-														{contribution.status}
-													</span>
-												</div>
-												<p className='text-brand-ink/60 text-sm line-clamp-1 max-w-md'>
-													{contribution.definition}
-												</p>
-											</div>
-											<div className='flex items-center space-x-4 flex-row'>
-												<div className='text-right mr-4'>
-													<div className='text-[10px] font-bold uppercase tracking-widest text-brand-ink/30'>
-														Submitted
 													</div>
-													<div className='text-xs font-medium'>
-														{new Date(
-															contribution.created_at,
-														).toLocaleDateString()}
+													<p className='text-brand-ink/60 text-sm line-clamp-2'>
+														{contribution.definition}
+													</p>
+													<p className='text-brand-ink/40 text-xs mt-2'>Base: {contribution.base_word?.word}</p>
+												</div>
+												<div className='flex items-center justify-between mt-4 pt-4 border-t border-brand-ink/5'>
+													<div className='text-xs font-medium text-brand-ink/40'>
+														{new Date(contribution.created_at).toLocaleDateString()}
+													</div>
+													<div className="flex gap-2">
+														<button onClick={() => setEditingVariantId(contribution.id)} className='text-brand-ink/20 hover:text-brand-ink transition-colors'>
+															<Edit3 size={16} />
+														</button>
+														<button onClick={() => deleteEntry(contribution.id)} className='text-brand-ink/20 hover:text-red-500 transition-colors'>
+															<Trash2 size={16} />
+														</button>
 													</div>
 												</div>
-												<button
-													onClick={() =>
-														deleteEntry(contribution.id)
-													}
-													className='p-2 rounded-xl text-brand-ink/20 hover:text-red-500 hover:bg-red-50 transition-all'
-												>
-													<Trash2 size={18} />
-												</button>
 											</div>
-										</motion.div>
-									))}
-								</>
-							) : (
-								<div className='py-24 text-center border-2 border-dashed border-brand-ink/5 rounded-3xl'>
-									<Plus
-										size={48}
-										className='mx-auto text-brand-ink/10 mb-6'
-									/>
-									<h3 className='text-2xl font-serif font-bold mb-2'>
-										No contributions yet
-									</h3>
-									<p className='text-brand-ink/60 mb-8'>
-										Start by adding your first word to the archive.
-									</p>
-									<button
-										onClick={() => setIsAdding(true)}
-										className='btn-primary'
-									>
-										Add First Entry
-									</button>
+										))
+									) : (
+										<div className="col-span-2 text-center py-12 text-brand-ink/40 font-medium">No contributions yet.</div>
+									)}
 								</div>
-							)}
-						</AnimatePresence>
-					</div>
-
-					{/* Load more skeleton */}
-					{contributions.length > 0 &&
-						loadingMore &&
-						Array.from({
-							length: Math.min(LOAD_MORE_COUNT, hiddenCount),
-						}).map((_, i) => (
-							<motion.div
-								key={`skeleton-${i}`}
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								className='h-24 rounded-xl bg-white/30 animate-pulse border border-brand-ink/5'
-							/>
-						))}
-
-					{/* Load More button */}
-					{contributions.length > 0 && hasMore && !loadingMore && (
-						<motion.div
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							className='pt-2'
-						>
-							<button
-								onClick={handleLoadMore}
-								className='w-full py-4
-													flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-widest btn-primary mt-2'
-							>
-								<ChevronDown size={16} />
-								Load {Math.min(LOAD_MORE_COUNT, hiddenCount)} more
-								<span className='text-white/80'>
-									({hiddenCount} remaining)
-								</span>
-							</button>
+								{hasMore && (
+									<button onClick={handleLoadMore} className='w-full py-4 flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-widest text-brand-orange hover:bg-brand-orange/5 mt-4 rounded-xl transition-colors'>
+										<ChevronDown size={16} /> Load More
+									</button>
+								)}
+							</div>
 						</motion.div>
 					)}
 
-					{/* All loaded indicator */}
-					{!hasMore && contributions.length > INITIAL_VISIBLE && (
-						<motion.div
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							className='pt-2 text-center text-xs font-bold uppercase tracking-widest text-brand-ink/20 py-4 mt-2'
-						>
-							All {contributions.length} contributions shown
-						</motion.div>
-					)}
-				</div>
-			</div>
-
-			{/* Add Entry Modal */}
-			<AnimatePresence>
-				{isAdding && (
-					<div className='fixed inset-0 z-100 flex items-center justify-center p-2'>
-						<motion.div
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							exit={{ opacity: 0 }}
-							onClick={() => setIsAdding(false)}
-							className='absolute inset-0 bg-brand-ink/40 backdrop-blur-sm'
-						/>
-						<motion.div
-							initial={{ opacity: 0, scale: 0.9, y: 20 }}
-							animate={{ opacity: 1, scale: 1, y: 0 }}
-							exit={{ opacity: 0, scale: 0.9, y: 20 }}
-							className='relative w-full max-w-2xl bg-brand-cream rounded-3xl shadow-2xl overflow-hidden'
-						>
-							<div className='px-6 py-4 border-b border-brand-ink/5 flex justify-between items-center'>
-								<h3 className='text-2xl font-serif font-bold'>
-									New Lexicon Entry
-								</h3>
-								<button
-									onClick={() => setIsAdding(false)}
-									className='p-2 rounded-xl hover:bg-brand-ink/5 text-brand-ink/40'
-								>
-									<X size={24} />
-								</button>
+					{activeTab === "base-words" && (
+						<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className='glass-card p-8 rounded-3xl border border-brand-ink/5'>
+							<h2 className='text-3xl font-serif font-bold mb-2'>Add Base Word</h2>
+							<p className='text-brand-ink/60 mb-8'>Register a root word before adding dialectal or tone-specific variants.</p>
+							
+							<div className="bg-brand-orange/10 p-4 rounded-xl border border-brand-orange/20 mb-8">
+								<h4 className="font-bold text-brand-orange mb-2 uppercase tracking-widest text-xs">Important Guidelines</h4>
+								<ul className="list-disc list-inside text-sm text-brand-ink/80 space-y-1">
+									<li>Use accurate sub-dotted letters: <strong>ẹ, ọ, ṣ</strong>. Do not use standard e, o, s if they shouldn't be.</li>
+									<li>Do <strong>not</strong> include tone marks (á, à) on the base word unless the root naturally requires it to distinguish meaning globally.</li>
+									<li>The syllable count is registered at the base word level.</li>
+								</ul>
 							</div>
 
-							<form
-								onSubmit={handleSubmit}
-								className='p-6 max-h-[75vh] overflow-y-auto space-y-6'
-							>
-								<div className='grid grid-cols-1 gap-4'>
-									<div className='space-y-2'>
-										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-											Base Word{" "}
-											<span className='text-brand-orange'>*</span>
-										</label>
-										<input
-											type='text'
-											className='input-field'
-											placeholder='e.g. Olukọ'
-											value={newEntry.base_word}
-											onChange={(e) =>
-												setNewEntry({
-													...newEntry,
-													base_word: e.target.value,
-												})
-											}
-											required
-										/>
-									</div>
-
-									<div className='space-y-2'>
-										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-											Definition{" "}
-											<span className='text-brand-orange'>*</span>
-										</label>
-										<textarea
-											rows={3}
-											className='input-field py-3'
-											placeholder='Provide a clear definition in English...'
-											value={newEntry.definition}
-											onChange={(e) =>
-												setNewEntry({
-													...newEntry,
-													definition: e.target.value,
-												})
-											}
-											required
-										/>
-									</div>
-
-									<div className='space-y-2'>
-										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-											Part of Speech{" "}
-											<span className='text-brand-orange'>*</span>
-										</label>
-										<select
-											className='input-field appearance-none'
-											value={newEntry.part_of_speech}
-											onChange={(e) =>
-												setNewEntry({
-													...newEntry,
-													part_of_speech: e.target.value,
-												})
-											}
-											required
-										>
-											<option value='noun'>Orúkọ (Noun)</option>
-											<option value='pronoun'>
-												Àrọ̀pò orúkọ (Pronoun)
-											</option>
-											<option value='verb'>Òrò ìṣe (Verb)</option>
-											<option value='adjective'>
-												Àpèjúwe (Adjective)
-											</option>
-											<option value='adverb'>
-												Àrọ̀pò òrò ìṣe (Adverb)
-											</option>
-											<option value='conjunction'>
-												Òrò àsopò (Conjunction)
-											</option>
-											<option value='preposition'>
-												Òrò ìbáṣepọ̀ (Preposition)
-											</option>
-											<option value='pronominal'>
-												Àrọ̀pò orúkọ àfikún (Pronominal)
-											</option>
-										</select>
-									</div>
-
-									<div className='space-y-2'>
-										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-											Phonetic Signature
-										</label>{" "}
-										<span className='text-brand-orange'>*</span>
-										<input
-											type='text'
-											className='input-field'
-											placeholder='e.g. m-d-r'
-											value={newEntry.phonetic}
-											onChange={(e) =>
-												setNewEntry({
-													...newEntry,
-													phonetic: e.target.value,
-												})
-											}
-											required
-										/>
-									</div>
-
-									<div className='space-y-2'>
-										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-											Syllables
-										</label>
-										<input
-											type='number'
-											className='input-field'
-											min='1'
-											placeholder='e.g 3'
-											value={newEntry.syllables}
-											onChange={(e) =>
-												setNewEntry({
-													...newEntry,
-													syllables: e.target.value,
-												})
-											}
-										/>
-									</div>
-
-									<div className='space-y-2'>
-										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-											Example (Yorùbá)
-										</label>
-										<input
-											type='text'
-											className='input-field'
-											placeholder='e.g. Òlùkọ̀ mi dùn'
-											value={newEntry.example_yoruba}
-											onChange={(e) =>
-												setNewEntry({
-													...newEntry,
-													example_yoruba: e.target.value,
-												})
-											}
-										/>
-									</div>
-
-									<div className='space-y-2'>
-										<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-											Example (English Translation)
-										</label>
-										<input
-											type='text'
-											className='input-field'
-											placeholder='e.g. My teacher is nice'
-											value={newEntry.example_english}
-											onChange={(e) =>
-												setNewEntry({
-													...newEntry,
-													example_english: e.target.value,
-												})
-											}
-										/>
-									</div>
-
-									<div className='pt-4 flex flex-col md:flex-row gap-4'>
-										<button
-											type='button'
-											onClick={() => setIsAdding(false)}
-											className='btn-secondary flex-1'
-										>
-											Cancel
-										</button>
-										<button
-											type='submit'
-											disabled={loading}
-											className='btn-primary flex-1 flex items-center justify-center space-x-2'
-										>
-											<Save size={18} />
-											<span>
-												{loading ? "Saving..." : "Save Entry"}
-											</span>
-										</button>
-									</div>
+							<form onSubmit={submitBaseWord} className='space-y-6'>
+								<div className='space-y-2'>
+									<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+										Word (Yorùbá) <span className='text-brand-orange'>*</span>
+									</label>
+									<input
+										type='text'
+										className='input-field'
+										placeholder='e.g. Olukọ'
+										value={baseWordInput}
+										onChange={(e) => setBaseWordInput(e.target.value)}
+										required
+									/>
+									<YorubaKeyboard onCharClick={(char) => setBaseWordInput(prev => prev + char)} />
 								</div>
+								
+								<div className='space-y-2'>
+									<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+										Syllables <span className='text-brand-orange'>*</span>
+									</label>
+									<input
+										type='number'
+										min='1'
+										className='input-field'
+										placeholder='e.g. 3'
+										value={baseWordSyllables}
+										onChange={(e) => setBaseWordSyllables(e.target.value)}
+										required
+									/>
+								</div>
+
+								<div className='space-y-2'>
+									<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+										Note (Optional)
+									</label>
+									<textarea
+										rows={2}
+										className='input-field py-3'
+										placeholder='Any etymological or historical notes...'
+										value={baseWordNote}
+										onChange={(e) => setBaseWordNote(e.target.value)}
+									/>
+								</div>
+
+								<button type='submit' disabled={isSubmittingBaseWord} className='btn-primary w-full flex items-center justify-center space-x-2'>
+									{isSubmittingBaseWord ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+									<span>Save Base Word</span>
+								</button>
 							</form>
 						</motion.div>
-					</div>
-				)}
-			</AnimatePresence>
+					)}
+
+					{activeTab === "variants" && (
+						<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className='space-y-6'>
+							{!selectedBaseWord ? (
+								<div className="glass-card p-8 rounded-3xl border border-brand-ink/5">
+									<h2 className='text-3xl font-serif font-bold mb-2'>Select a Base Word</h2>
+									<p className='text-brand-ink/60 mb-8'>Choose a letter to load available base words.</p>
+									
+									<div className="flex flex-wrap gap-2 mb-8">
+										{YORUBA_ALPHABET.map(letter => (
+											<button
+												key={letter}
+												onClick={() => setSelectedLetter(letter)}
+												className={`w-10 h-10 rounded-lg font-bold transition-all cursor-pointer ${
+													selectedLetter === letter 
+														? "bg-brand-orange text-white shadow-md"
+														: "bg-white border border-brand-ink/10 text-brand-ink hover:border-brand-orange/30 hover:text-brand-orange"
+												}`}
+											>
+												{letter}
+											</button>
+										))}
+									</div>
+
+									<div className="bg-white rounded-2xl border border-brand-ink/5 overflow-hidden">
+										{loadingBaseWords ? (
+											<Loader text="Loading base words..." />
+										) : baseWords.length > 0 ? (
+											<ul className="divide-y divide-brand-ink/5">
+												{baseWords.map(bw => (
+													<li key={bw.id} 
+														onClick={() => setSelectedBaseWord(bw)} 
+														className="p-4 hover:bg-brand-orange/5 cursor-pointer flex justify-between items-center transition-colors group"
+													>
+														<div>
+															<span className="font-serif font-bold text-lg group-hover:text-brand-orange transition-colors">{bw.word}</span>
+															{bw.note && <p className="text-xs text-brand-ink/40 line-clamp-1">{bw.note}</p>}
+														</div>
+														<Plus size={20} className="text-brand-ink/20 group-hover:text-brand-orange" />
+													</li>
+												))}
+											</ul>
+										) : (
+											<div className="py-12 text-center text-brand-ink/40">
+												No base words found for letter {selectedLetter}.
+											</div>
+										)}
+									</div>
+								</div>
+							) : (
+								<div className="glass-card p-8 rounded-3xl border border-brand-ink/5">
+									<div className="flex items-center justify-between mb-8 pb-4 border-b border-brand-ink/5">
+										<div>
+											<h2 className='text-3xl font-serif font-bold mb-1'>Add Variant</h2>
+											<p className="text-brand-ink/60">For base word: <span className="font-bold text-brand-orange">{selectedBaseWord.word}</span></p>
+										</div>
+										<button onClick={() => setSelectedBaseWord(null)} className="text-sm font-bold uppercase tracking-widest text-brand-ink/40 hover:text-brand-orange transition-colors">
+											Change
+										</button>
+									</div>
+
+									<div className="bg-brand-orange/10 p-4 rounded-xl border border-brand-orange/20 mb-8">
+										<h4 className="font-bold text-brand-orange mb-2 uppercase tracking-widest text-xs">Tone Marking Guidelines</h4>
+										<p className="text-sm text-brand-ink/80 leading-relaxed">
+											Unlike the base word, the variant <strong>must</strong> include the precise tone marks (´, `, etc.) that define its specific pronunciation and meaning. Example: <em>Olùkọ́</em>.
+										</p>
+									</div>
+
+									<form onSubmit={submitVariant} className='space-y-6'>
+										<div className='grid md:grid-cols-2 gap-6'>
+											<div className='space-y-2 md:col-span-2'>
+												<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+													Fully Tone-Marked Word <span className='text-brand-orange'>*</span>
+												</label>
+												<input
+													type='text'
+													className='input-field'
+													placeholder='e.g. Olùkọ́'
+													value={variantForm.word}
+													onChange={(e) => setVariantForm({...variantForm, word: e.target.value})}
+													required
+												/>
+												<YorubaKeyboard onCharClick={insertCharToVariantWord} />
+											</div>
+
+											<div className='space-y-2'>
+												<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+													Phonetic Signature (Optional)
+												</label>
+												<input
+													type='text'
+													className='input-field'
+													placeholder='e.g. m-d-r'
+													value={variantForm.phonetic}
+													onChange={(e) => setVariantForm({...variantForm, phonetic: e.target.value})}
+												/>
+												<p className="text-[10px] text-brand-ink/40 ml-1">Use 'd' (low), 'r' (high), 'm' (mid).</p>
+											</div>
+
+											<div className='space-y-2'>
+												<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+													Part of Speech <span className='text-brand-orange'>*</span>
+												</label>
+												<select
+													className='input-field appearance-none cursor-pointer'
+													value={variantForm.part_of_speech}
+													onChange={(e) => setVariantForm({...variantForm, part_of_speech: e.target.value})}
+													required
+												>
+													{PARTS_OF_SPEECH.map((pos) => (
+														<option key={pos.value} value={pos.value}>{pos.label}</option>
+													))}
+												</select>
+											</div>
+
+											<div className='space-y-2 md:col-span-2'>
+												<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+													Definition <span className='text-brand-orange'>*</span>
+												</label>
+												<textarea
+													rows={2}
+													className='input-field py-3'
+													placeholder='Provide a clear definition in English...'
+													value={variantForm.definition}
+													onChange={(e) => setVariantForm({...variantForm, definition: e.target.value})}
+													required
+												/>
+											</div>
+
+											<div className='space-y-2'>
+												<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+													Example (Yorùbá)
+												</label>
+												<textarea
+													rows={2}
+													className='input-field py-3'
+													placeholder='e.g. Òlùkọ̀ mi dùn'
+													value={variantForm.example_yoruba}
+													onChange={(e) => setVariantForm({...variantForm, example_yoruba: e.target.value})}
+												/>
+											</div>
+
+											<div className='space-y-2'>
+												<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
+													Translation (English)
+												</label>
+												<textarea
+													rows={2}
+													className='input-field py-3'
+													placeholder='e.g. My teacher is nice'
+													value={variantForm.example_english}
+													onChange={(e) => setVariantForm({...variantForm, example_english: e.target.value})}
+												/>
+											</div>
+										</div>
+
+										<button type='submit' disabled={isSubmittingVariant} className='btn-primary w-full flex items-center justify-center space-x-2 mt-4'>
+											{isSubmittingVariant ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+											<span>Submit Variant</span>
+										</button>
+									</form>
+								</div>
+							)}
+						</motion.div>
+					)}
+				</div>
+			</div>
+
+			<EditVariantModal 
+				id={editingVariantId} 
+				onClose={() => setEditingVariantId(null)} 
+				onSuccess={() => { if(user) fetchContributions(user.id) }} 
+			/>
 		</div>
 	);
 };
@@ -634,11 +641,9 @@ const StatItem: React.FC<{
 	label: string;
 	value: number;
 }> = ({ icon, label, value }) => (
-	<div className='flex items-center justify-between'>
-		<div className='flex items-center space-x-3'>
-			{icon}
-			<span className='text-sm font-medium text-brand-ink/60'>{label}</span>
-		</div>
-		<span className='text-lg font-bold'>{value}</span>
+	<div className='flex flex-col items-center justify-center text-center'>
+		<div className="mb-2 bg-brand-ink/5 p-3 rounded-full">{icon}</div>
+		<span className='text-2xl font-bold font-serif mb-1'>{value}</span>
+		<span className='text-xs font-bold uppercase tracking-widest text-brand-ink/40'>{label}</span>
 	</div>
 );

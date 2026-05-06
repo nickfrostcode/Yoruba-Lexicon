@@ -10,23 +10,28 @@ import {
 import { Layout } from "./components/Layout";
 import { Landing } from "./pages/Landing";
 import { Browse } from "./pages/Browse";
+import { BaseWordDetail } from "./pages/BaseWordDetail";
 import { Dashboard } from "./pages/Dashboard";
 import { Auth } from "./pages/Auth";
 import { Admin } from "./pages/Admin";
+import { EditEntry } from "./pages/EditEntry";
 import { Contributors } from "./pages/Contributors";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./lib/ProtectedRoute";
 import { AdminRoute } from "./lib/AdminRoute";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 export default function App() {
 	return (
 		<AuthProvider>
 			<Router>
+				<ScrollToTop />
 				<Layout>
 					<Routes>
 						{/* Public Routes */}
 						<Route path='/' element={<Landing />} />
 						<Route path='/browse' element={<Browse />} />
+						<Route path='/browse/:id' element={<BaseWordDetail />} />
 						<Route
 							path='/contributors'
 							element={<Contributors />}

@@ -1,22 +1,26 @@
-# Supabase Setup Guide for Yorùbá Lexicon
+# Supabase Setup Guide for Yorùbá Lexicon (Base-Word Variant Architecture)
 
-To get this application fully functional, you need to set up a Supabase project and configure the database schema.
+To get this application fully functional with the new Base-Word → Variant architecture, configure the database schema as follows.
 
 ## 1. Create a Supabase Project
-
 1. Go to [supabase.com](https://supabase.com/) and create a new project.
 2. Once the project is created, go to **Project Settings > API** to get your `URL` and `anon public` key.
-3. Add these to your AI Studio **Secrets** panel:
-   - `VITE_SUPABASE_URL`: Your Supabase Project URL
-   - `VITE_SUPABASE_ANON_KEY`: Your Supabase Anon Key
+3. Update `.env.local`:
+   ```env
+   VITE_SUPABASE_URL=Your_URL
+   VITE_SUPABASE_ANON_KEY=Your_Anon_Key
+   ```
 
-## 2. Database Schema
+## 2. Database Schema Migrations
 
-Run the following SQL in the **SQL Editor** of your Supabase dashboard:
+Run the following SQL in the **SQL Editor** of your Supabase dashboard. It will create the necessary tables, configure Foreign Keys, and set up Row Level Security.
 
 ```sql
--- Create Profiles Table
-CREATE TABLE profiles (
+-- Enable necessary extensions (UUIDs)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 1. Create Profiles Table (if not exists)
+CREATE TABLE IF NOT EXISTS profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   full_name TEXT,
@@ -25,9 +29,29 @@ CREATE TABLE profiles (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- Create Lexicon Entries Table
+-- 2. Create Base Words Table
+CREATE TABLE base_words (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  word TEXT NOT NULL,
+  normalized_word TEXT NOT NULL UNIQUE,
+  alphabet TEXT,
+  syllables NUMERIC CHECK (syllables > 0),
+  note TEXT,
+  created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE INDEX idx_base_words_normalized ON base_words(normalized_word);
+CREATE INDEX idx_base_words_alphabet ON base_words(alphabet);
+
+-- 3. Create/Modify Lexicon Entries Table (Variants)
+-- Note: If you already have existing lexicon_entries, you must rename the table or drop and recreate.
+-- Assuming a fresh setup for simplicity or you can DROP TABLE lexicon_entries;
+DROP TABLE IF EXISTS lexicon_entries;
+
 CREATE TABLE lexicon_entries (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  base_word_id UUID NOT NULL REFERENCES base_words(id) ON DELETE CASCADE,
   word TEXT NOT NULL,
   phonetic TEXT,
   part_of_speech TEXT,
@@ -39,8 +63,11 @@ CREATE TABLE lexicon_entries (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
+CREATE INDEX idx_lexicon_entries_base_word_id ON lexicon_entries(base_word_id);
+
 -- Enable RLS
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE base_words ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lexicon_entries ENABLE ROW LEVEL SECURITY;
 
 -- Helper function to check if user is admin
@@ -55,150 +82,96 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Auth Trigger to automatically create profiles for new users
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, avatar_url, role)
+  VALUES (
+    new.id,
+    new.email,
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'avatar_url',
+    'user'
+  );
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger the function every time a user is created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Contributors Leaderboard RPC
+CREATE OR REPLACE FUNCTION get_contributors_leaderboard()
+RETURNS TABLE (
+    id UUID,
+    full_name TEXT,
+    email TEXT,
+    contribution_count BIGINT,
+    last_contribution_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id,
+        p.full_name,
+        p.email,
+        COUNT(l.id) AS contribution_count,
+        MAX(l.created_at) AS last_contribution_at
+    FROM 
+        profiles p
+    JOIN 
+        lexicon_entries l ON p.id = l.contributor_id
+    WHERE 
+        l.status = 'approved'
+    GROUP BY 
+        p.id, p.full_name, p.email
+    ORDER BY 
+        contribution_count DESC, last_contribution_at DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Profiles Policies
-CREATE POLICY "Public profiles are viewable by everyone." ON profiles
-  FOR SELECT USING (true);
+CREATE POLICY "Public profiles are viewable by everyone." ON profiles FOR SELECT USING (true);
+CREATE POLICY "Users can insert their own profile." ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can update own profile." ON profiles FOR UPDATE USING (auth.uid() = id OR is_admin());
 
-CREATE POLICY "Users can insert their own profile." ON profiles
-  FOR INSERT WITH CHECK (auth.uid() = id);
+-- Base Words Policies
+CREATE POLICY "Base words are viewable by everyone." ON base_words FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can insert base words." ON base_words FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Admins can update base words." ON base_words FOR UPDATE USING (is_admin());
+CREATE POLICY "Admins can delete base words." ON base_words FOR DELETE USING (is_admin());
 
-CREATE POLICY "Users can update own profile." ON profiles
-  FOR UPDATE USING (auth.uid() = id OR is_admin());
-
--- Lexicon Entries Policies
-CREATE POLICY "Approved entries are viewable by everyone." ON lexicon_entries
-  FOR SELECT USING (status = 'approved' OR is_admin());
-
-CREATE POLICY "Users can view their own pending entries." ON lexicon_entries
-  FOR SELECT USING (auth.uid() = contributor_id OR is_admin());
-
-CREATE POLICY "Authenticated users can insert entries." ON lexicon_entries
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "Admins can update any entry." ON lexicon_entries
-  FOR UPDATE USING (is_admin());
-
-CREATE POLICY "Users can delete their own entries." ON lexicon_entries
-  FOR DELETE USING (auth.uid() = contributor_id OR is_admin());
+-- Lexicon Entries (Variants) Policies
+CREATE POLICY "Approved entries are viewable by everyone." ON lexicon_entries FOR SELECT USING (status = 'approved' OR is_admin());
+CREATE POLICY "Users can view all entries joining base words." ON lexicon_entries FOR SELECT USING (true); -- needed for counts, filtering by approved
+CREATE POLICY "Users can view their own entries." ON lexicon_entries FOR SELECT USING (auth.uid() = contributor_id OR is_admin());
+CREATE POLICY "Authenticated users can insert entries." ON lexicon_entries FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Admins can update any entry." ON lexicon_entries FOR UPDATE USING (is_admin());
+CREATE POLICY "Users can delete their own entries." ON lexicon_entries FOR DELETE USING (auth.uid() = contributor_id OR is_admin());
 ```
 
-## Update code
+## 3. Example Queries
 
-
--- Table
-CREATE TABLE public.lexicon_entries (
-  id uuid DEFAULT gen_random_uuid() NOT NULL,
-  base_word text,
-  phonetic text,
-  part_of_speech text,
-  definition text,
-  example_yoruba text,
-  example_english text,
-  contributor_id uuid,
-  status text DEFAULT 'pending'::text,
-  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
-  syllables numeric CHECK (syllables > (0)::numeric),
-
-  CONSTRAINT lexicon_entries_pkey
-    PRIMARY KEY (id),
-
-  CONSTRAINT lexicon_entries_status_check
-    CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text])),
-
-  CONSTRAINT lexicon_entries_contributor_id_fkey
-    FOREIGN KEY (contributor_id)
-    REFERENCES public.profiles(id)
-    ON DELETE SET NULL
-);
-
--- Column comments
-COMMENT ON COLUMN public.lexicon_entries.base_word IS 'The word being entry about';
-COMMENT ON COLUMN public.lexicon_entries.phonetic IS 'eg doremi';
-COMMENT ON COLUMN public.lexicon_entries.part_of_speech IS 'the part of speech of the word being entered';
-COMMENT ON COLUMN public.lexicon_entries.definition IS 'The description of the word being entered';
-COMMENT ON COLUMN public.lexicon_entries.syllables IS 'The number of syllables in the word';
-
--- RLS
-ALTER TABLE public.lexicon_entries ENABLE ROW LEVEL SECURITY;
-
--- Policies
-
--- Approved entries are viewable by everyone.
-CREATE POLICY "Approved entries are viewable by everyone."
-ON public.lexicon_entries
-AS PERMISSIVE
-FOR SELECT
-TO public
-USING (
-  (status = 'approved'::text) OR is_admin()
-);
-
--- Anon can view contributor profiles
-CREATE POLICY "Anon can view contributor profiles"
-ON public.lexicon_entries
-AS PERMISSIVE
-FOR SELECT
-TO anon
-USING (
-  EXISTS (
-    SELECT 1
-    FROM lexicon_entries le
-    WHERE (le.contributor_id = profiles.id)
-      AND (le.contributor_id IS NOT NULL)
-  )
-);
-
--- Authenticated can view profiles
-CREATE POLICY "Authenticated can view profiles"
-ON public.lexicon_entries
-AS PERMISSIVE
-FOR SELECT
-TO authenticated
-USING (true);
-
--- Authenticated users can insert entries.
-CREATE POLICY "Authenticated users can insert entries."
-ON public.lexicon_entries
-AS PERMISSIVE
-FOR INSERT
-TO public
-WITH CHECK (
-  auth.role() = 'authenticated'::text
-);
-
--- Users can delete their own entries.
-CREATE POLICY "Users can delete their own entries."
-ON public.lexicon_entries
-AS PERMISSIVE
-FOR DELETE
-TO public
-USING (
-  (auth.uid() = contributor_id) OR is_admin()
-);
-
--- Users can view their own pending entries.
-CREATE POLICY "Users can view their own pending entries."
-ON public.lexicon_entries
-AS PERMISSIVE
-FOR SELECT
-TO public
-USING (
-  (auth.uid() = contributor_id) OR is_admin()
-);
-
-## 3. How to Grant Admin Access
-
-To make a user an admin, run this SQL in the Supabase SQL Editor:
-
+**Insert a Base Word:**
 ```sql
-UPDATE profiles SET role = 'admin' WHERE email = 'user@example.com';
+INSERT INTO base_words (word, normalized_word, alphabet, created_by)
+VALUES ('Olukọ', 'oluko', 'O', 'user-uuid-here');
 ```
 
-## 4. Authentication
+**Insert a Variant (Lexicon Entry):**
+```sql
+INSERT INTO lexicon_entries (base_word_id, definition, contributor_id)
+VALUES ('base-word-uuid', 'A teacher or instructor', 'user-uuid-here');
+```
 
-- Go to **Authentication > Providers** and ensure **Email** is enabled.
-- (Optional) Enable **Google** or **GitHub** if you want social login.
-
-## 5. Initial Data (Optional)
-
-You can add some initial entries to `lexicon_entries` with `status = 'approved'` to see them in the browse page immediately.
+**Get Base Words with Variant Count:**
+```sql
+SELECT bw.*, COUNT(le.id) as variant_count
+FROM base_words bw
+LEFT JOIN lexicon_entries le ON le.base_word_id = bw.id
+GROUP BY bw.id;
+```

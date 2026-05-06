@@ -54,12 +54,41 @@ export interface Database {
 					created_at?: string;
 				};
 			};
+			base_words: {
+				Row: {
+					id: string;
+					word: string;
+					normalized_word: string;
+					alphabet: string;
+					note: string | null;
+					created_by: string | null;
+					created_at: string;
+				};
+				Insert: {
+					id?: string;
+					word: string;
+					normalized_word: string;
+					alphabet: string;
+					note?: string | null;
+					created_by?: string | null;
+					created_at?: string;
+				};
+				Update: {
+					id?: string;
+					word?: string;
+					normalized_word?: string;
+					alphabet?: string;
+					note?: string | null;
+					created_by?: string | null;
+					created_at?: string;
+				};
+			};
 			lexicon_entries: {
 				Row: {
 					id: string;
-					base_word: string;
-               phonetic: string;
-               syllables: number | null;
+					base_word_id: string;
+					phonetic: string | null;
+					syllables: number | null;
 					part_of_speech: string | null;
 					definition: string;
 					example_yoruba: string | null;
@@ -70,8 +99,9 @@ export interface Database {
 				};
 				Insert: {
 					id?: string;
-					base_word: string;
-					phonetic?: string;
+					base_word_id: string;
+					phonetic?: string | null;
+					syllables?: number | null;
 					part_of_speech?: string | null;
 					definition: string;
 					example_yoruba?: string | null;
@@ -82,8 +112,9 @@ export interface Database {
 				};
 				Update: {
 					id?: string;
-					base_word?: string;
+					base_word_id?: string;
 					phonetic?: string | null;
+					syllables?: number | null;
 					part_of_speech?: string | null;
 					definition?: string;
 					example_yoruba?: string | null;

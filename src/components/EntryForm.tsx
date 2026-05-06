@@ -2,6 +2,9 @@
 
 import { Save } from "lucide-react";
 import { LexiconEntryForm } from "../lib/types";
+import { BaseWordAutocomplete } from "./BaseWordAutocomplete";
+
+import { PARTS_OF_SPEECH } from "../lib/constants";
 
 interface EntryFormProps {
 	entry: LexiconEntryForm;
@@ -33,14 +36,14 @@ export const EntryForm: React.FC<EntryFormProps> = ({
 			<div className='grid grid-cols-1 gap-4'>
 				<div className='space-y-2'>
 					<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-						Base Word <span className='text-brand-orange'>*</span>
+						Variant Word (Tone-Marked) <span className='text-brand-orange'>*</span>
 					</label>
 					<input
 						type='text'
 						className='input-field'
-						placeholder='e.g. Olukọ'
-						value={entry.base_word}
-						onChange={(e) => updateField("base_word", e.target.value)}
+						placeholder='e.g. Olùkọ́'
+						value={entry.word}
+						onChange={(e) => updateField("word", e.target.value)}
 						required
 					/>
 				</div>
@@ -71,45 +74,24 @@ export const EntryForm: React.FC<EntryFormProps> = ({
 						}
 						required
 					>
-						<option value='noun'>Orúkọ (Noun)</option>
-						<option value='pronoun'>Àrọ̀pò orúkọ (Pronoun)</option>
-						<option value='verb'>Òrò ìṣe (Verb)</option>
-						<option value='adjective'>Àpèjúwe (Adjective)</option>
-						<option value='adverb'>Àrọ̀pò òrò ìṣe (Adverb)</option>
-						<option value='conjunction'>Òrò àsopò (Conjunction)</option>
-						<option value='preposition'>Òrò ìbáṣepọ̀ (Preposition)</option>
-						<option value='pronominal'>
-							Àrọ̀pò orúkọ àfikún (Pronominal)
-						</option>
+						{PARTS_OF_SPEECH.map((pos) => (
+							<option key={pos.value} value={pos.value}>
+								{pos.label}
+							</option>
+						))}
 					</select>
 				</div>
 
 				<div className='space-y-2'>
 					<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
 						Phonetic Signature
-					</label>{" "}
-					<span className='text-brand-orange'>*</span>
+					</label>
 					<input
 						type='text'
 						className='input-field'
 						placeholder='e.g. m-d-r'
 						value={entry.phonetic}
 						onChange={(e) => updateField("phonetic", e.target.value)}
-						required
-					/>
-				</div>
-
-				<div className='space-y-2'>
-					<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-						Syllables
-					</label>
-					<input
-						type='number'
-						className='input-field'
-						min='1'
-						placeholder='e.g 3'
-						value={entry.syllables}
-						onChange={(e) => updateField("syllables", e.target.value)}
 					/>
 				</div>
 

@@ -153,6 +153,51 @@ export const Landing: React.FC = () => {
 				</div>
 			</section>
 
+			{/* History & Purpose Section */}
+			<section className='py-24 bg-white border-t border-brand-ink/5'>
+				<div className='max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-24'>
+					{/* Project About */}
+					<div className="grid md:grid-cols-2 gap-12 items-center">
+						<div>
+							<h2 className='text-3xl font-serif font-bold mb-4 text-brand-ink'>About The Project</h2>
+							<p className='text-brand-ink/70 leading-relaxed text-lg'>
+								This digital lexicon is a living archive, aimed at comprehensively documenting the Yorùbá language. Unlike traditional dictionaries, our platform distinguishes between base root words and dialetical or tone-marked variants, allowing linguists, students, and everyday speakers to understand the deep phonetic and semantic relationships within the language.
+							</p>
+						</div>
+						<div className="bg-brand-orange/5 p-8 rounded-3xl border border-brand-orange/10">
+							<h3 className='text-xl font-bold mb-2 text-brand-orange'>How to Contribute</h3>
+							<ol className="list-decimal list-inside space-y-3 text-brand-ink/80">
+								<li>Create a free account or sign in.</li>
+								<li>Search to ensure the word isn't already archived.</li>
+								<li>Add the <strong>Base Word</strong> (without specific tonal modifications).</li>
+								<li>Add <strong>Variants</strong> (the fully tone-marked words) with definitions and examples.</li>
+							</ol>
+						</div>
+					</div>
+
+					{/* History of Yoruba */}
+					<div>
+						<h2 className='text-3xl font-serif font-bold mb-4 text-brand-ink text-center'>A Brief History of Yorùbá</h2>
+						<div className="prose prose-brand max-w-3xl mx-auto text-brand-ink/70 leading-relaxed text-lg">
+							<p className="mb-4">
+								Yorùbá is a Niger-Congo language spoken by over 40 million people worldwide. Its origins trace back to the Oyo Empire in present-day Nigeria, but through historical trade, migration, and the transatlantic slave trade, its influence has spread globally.
+							</p>
+							<p>
+								Today, Yorùbá is primarily spoken in Southwestern <strong>Nigeria</strong>, <strong>Benin Republic</strong>, and <strong>Togo</strong>. However, its linguistic and cultural artifacts are deeply woven into the spiritual and cultural practices of communities in <strong>Brazil</strong> (as Lucumí), <strong>Cuba</strong>, <strong>Trinidad and Tobago</strong>, and among diaspora populations in the UK and USA.
+							</p>
+						</div>
+					</div>
+
+					{/* Why Document? */}
+					<div className="bg-brand-ink text-brand-cream p-12 rounded-3xl text-center">
+						<h2 className='text-3xl font-serif font-bold mb-6 text-brand-orange'>Why Document Our Language?</h2>
+						<p className='text-lg leading-relaxed max-w-2xl mx-auto'>
+							A language carries the weight of a people's philosophy, science, and history. With rapid globalization, precise tonal distinctions and deep dialects of Yorùbá are slowly homogenizing. We document the language today to ensure that tomorrow's generation inherits not just a simplified vocabulary, but the complete, vibrant, and intricate legacy of their ancestors.
+						</p>
+					</div>
+				</div>
+			</section>
+
 			{/* CTA Section */}
 			<section className='py-32'>
 				<div className='max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center'>

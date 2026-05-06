@@ -49,7 +49,7 @@ export const AdminLexiconCard: React.FC<AdminLexiconCardProps> = ({
 			<div className='flex justify-between items-start mb-4 gap-2'>
 				<div className='min-w-0 flex-1'>
 					<h3 className='text-3xl font-serif font-bold text-brand-ink group-hover:text-brand-orange transition-colors wrap-break-word'>
-						{entry.base_word}{" "}
+						{entry.word}{" "}
 						<span className='text-brand-ink/40 text-sm'>
 							({entry.phonetic})
 						</span>
@@ -57,12 +57,6 @@ export const AdminLexiconCard: React.FC<AdminLexiconCardProps> = ({
 					<div className='flex flex-wrap items-center gap-x-3 gap-y-1 mt-1'>
 						<span className='text-xs font-bold uppercase tracking-widest text-brand-orange'>
 							{entry.part_of_speech || "N/A"}
-							<span className='font-light lowercase text-brand-orange/90'>
-								{" "}
-								{entry.syllables
-									? `| ${entry.syllables} syllables`
-									: ""}
-							</span>
 						</span>
 						<span
 							className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${

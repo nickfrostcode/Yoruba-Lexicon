@@ -59,19 +59,19 @@ export const Auth: React.FC = () => {
 				if (error) throw error;
 
 				// Create profile if sign up successful
-				// if (data.user) {
-				// 	const { error: profileError } = await supabase
-				// 		.from("profiles")
-				// 		.insert([
-				// 			{
-				// 				id: data.user.id,
-				// 				email,
-				// 				full_name: fullName,
-				// 			},
-				// 		]);
-				// 	if (profileError)
-				// 		console.error("Error creating profile:", profileError);
-				// }
+				if (data.user) {
+					const { error: profileError } = await supabase
+						.from("profiles")
+						.insert([
+							{
+								id: data.user.id,
+								email,
+								full_name: fullName,
+							},
+						]);
+					if (profileError)
+						console.error("Error creating profile:", profileError);
+				}
 				toast.success("Account created successfully!");
 			}
 		} catch (err: unknown) {

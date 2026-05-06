@@ -8,6 +8,7 @@ import { FilterPills } from "../components/FilterPills";
 import { Pagination } from "../components/Pagination";
 import { LexiconCard } from "../components/LexiconCard";
 import { BrowseEntry } from "../lib/types";
+import { YORUBA_ALPHABET } from "../lib/constants";
 
 const ITEMS_PER_PAGE = 12; // divisible by 3, 2, and 1 — fits all grid layouts
 
@@ -17,34 +18,6 @@ export const Browse: React.FC = () => {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedLetter, setSelectedLetter] = useState<string>("all");
 	const [currentPage, setCurrentPage] = useState(1);
-
-	const alphabet = [
-		"A",
-		"B",
-		"D",
-		"E",
-		"Ẹ",
-		"F",
-		"G",
-		"GB",
-		"H",
-		"I",
-		"J",
-		"K",
-		"L",
-		"M",
-		"N",
-		"O",
-		"Ọ",
-		"P",
-		"R",
-		"S",
-		"Ṣ",
-		"T",
-		"U",
-		"W",
-		"Y",
-	];
 
 	useEffect(() => {
 		fetchEntries();
@@ -57,28 +30,40 @@ export const Browse: React.FC = () => {
 	const fetchEntries = async () => {
 		setLoading(true);
 		let query = supabase
-			.from("lexicon_entries")
-			.select("*")
-			.eq("status", "approved")
-			.order("base_word", { ascending: true });
+			.from("base_words")
+			.select("id, word, normalized_word, syllables, lexicon_entries!inner(id)")
+			.eq("lexicon_entries.status", "approved")
+			.order("word", { ascending: true });
 
 		if (selectedLetter !== "all") {
-			query = query.ilike("base_word", `${selectedLetter}%`);
+			// use the alphabet column for better precision if possible, but ILIKE works too
+			query = query.ilike("normalized_word", `${selectedLetter.toLowerCase()}%`);
 		}
 
 		const { data, error } = await query;
 		if (error) {
 			console.error("Error fetching entries:", error);
 		} else {
-			setEntries(data || []);
+            // Because there might be multiple approved variants, we just map the length
+            const formatted = (data as any[] || []).map(b => ({
+                id: b.id,
+                word: b.word,
+				syllables: b.syllables,
+                variant_count: Array.isArray(b.lexicon_entries) ? b.lexicon_entries.length : 0
+            }));
+            
+            // Due to !inner, a single base_word may be duplicated if PostgREST flattens it, but usually it nests.
+            // Just unique by id to be safe
+            const unique = Array.from(new Map(formatted.map(item => [item.id, item])).values());
+            
+			setEntries(unique);
 		}
 		setLoading(false);
 	};
 
 	const filteredEntries = entries.filter(
 		(entry) =>
-			entry.base_word.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			entry.definition.toLowerCase().includes(searchTerm.toLowerCase()),
+			entry.word.toLowerCase().includes(searchTerm.toLowerCase())
 	);
 
 	const totalPages = Math.ceil(filteredEntries.length / ITEMS_PER_PAGE);
@@ -106,7 +91,7 @@ export const Browse: React.FC = () => {
 				<FilterPills
 					items={[
 						{ key: "all", label: "All" },
-						...alphabet.map((letter) => ({ key: letter, label: letter })),
+						...YORUBA_ALPHABET.map((letter) => ({ key: letter, label: letter })),
 					]}
 					value={selectedLetter}
 					onChange={setSelectedLetter}
