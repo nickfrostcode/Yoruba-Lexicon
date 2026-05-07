@@ -1,3 +1,5 @@
+/** @format */
+
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -14,20 +16,11 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 		persistSession: true,
 		autoRefreshToken: true,
 		detectSessionInUrl: true,
-		storage:
-			typeof window !== "undefined" ? window.localStorage : undefined,
+		storage: typeof window !== "undefined" ? window.localStorage : undefined,
 	},
 });
 
-export type Json =
-	| string
-	| number
-	| boolean
-	| null
-	| { [key: string]: Json | undefined }
-	| Json[];
-
-export interface Database {
+interface Database {
 	public: {
 		Tables: {
 			profiles: {
@@ -60,6 +53,7 @@ export interface Database {
 					word: string;
 					normalized_word: string;
 					alphabet: string;
+					syllables: number | null;
 					note: string | null;
 					created_by: string | null;
 					created_at: string;
@@ -69,6 +63,7 @@ export interface Database {
 					word: string;
 					normalized_word: string;
 					alphabet: string;
+					syllables?: number | null;
 					note?: string | null;
 					created_by?: string | null;
 					created_at?: string;
@@ -78,6 +73,7 @@ export interface Database {
 					word?: string;
 					normalized_word?: string;
 					alphabet?: string;
+					syllables?: number | null;
 					note?: string | null;
 					created_by?: string | null;
 					created_at?: string;
@@ -125,6 +121,8 @@ export interface Database {
 				};
 			};
 		};
+		Views: {};
+		Enums: {};
 		Functions: {
 			get_contributors_leaderboard: {
 				Args: Record<string, never>;
