@@ -14,7 +14,6 @@ import { BaseWordDetail } from "./pages/BaseWordDetail";
 import { Dashboard } from "./pages/Dashboard";
 import { Auth } from "./pages/Auth";
 import { Admin } from "./pages/Admin";
-import { EditEntry } from "./pages/EditEntry";
 import { Contributors } from "./pages/Contributors";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./lib/ProtectedRoute";

@@ -237,100 +237,127 @@ export const Navbar: React.FC = () => {
 				</div>
 			</div>
 
-			{/* Mobile menu */}
+			{/* Mobile sidebar overlay */}
 			<AnimatePresence>
 				{isOpen && (
-					<motion.div
-						initial={{ opacity: 0, height: 0 }}
-						animate={{ opacity: 1, height: "auto" }}
-						exit={{ opacity: 0, height: 0 }}
-						transition={{ duration: 0.22, ease: "easeInOut" }}
-						className='md:hidden bg-brand-cream border-t border-brand-ink/5 overflow-hidden'
-					>
-						<div className='px-4 pt-3 pb-6 space-y-1'>
-							{/* User greeting on mobile */}
-							{user && (
-								<div className='flex items-center gap-3 px-3 py-4 mb-2 border-b border-brand-ink/5'>
-									<div
-										className='w-10 h-10 rounded-xl bg-brand-orange text-white
-										flex items-center justify-center text-sm font-bold shrink-0'
-									>
-										{getInitials()}
-									</div>
-									<div>
-										<p className='font-bold text-brand-ink text-sm'>
-											{displayName}
-										</p>
-										<p className='text-xs text-brand-ink/40 truncate max-w-50'>
-											{user.email}
-										</p>
-									</div>
-									{isAdmin && (
-										<span
-											className='ml-auto text-[10px] font-bold uppercase tracking-wider
-											text-brand-orange bg-brand-orange/10 px-2 py-1 rounded-full'
-										>
-											Admin
-										</span>
-									)}
-								</div>
-							)}
+					<>
+						{/* Backdrop */}
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							transition={{ duration: 0.2 }}
+							onClick={() => setIsOpen(false)}
+							className='fixed inset-0 bg-black/30 md:hidden z-40'
+						/>
 
-							{navLinks.map((link, i) => {
-								const isActive = location.pathname === link.path;
-								return (
-									<motion.div
-										key={link.path}
-										initial={{ opacity: 0, x: -12 }}
-										animate={{ opacity: 1, x: 0 }}
-										transition={{ delay: i * 0.05 }}
-									>
-										<Link
-											to={link.path}
-											className={`flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-medium transition-all ${
-												isActive
-													? "bg-brand-orange/10 text-brand-orange"
-													: "text-brand-ink/70 hover:bg-brand-ink/5 hover:text-brand-ink"
-											}`}
-										>
-											<link.icon size={18} />
-											{link.name}
-											{isActive && (
-												<div className='ml-auto w-1.5 h-1.5 rounded-full bg-brand-orange' />
-											)}
-										</Link>
-									</motion.div>
-								);
-							})}
-
-							<motion.div
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								transition={{ delay: navLinks.length * 0.05 }}
-								className='pt-3 border-t border-brand-ink/5 mt-2'
-							>
-								{user ? (
+						{/* Sidebar */}
+						<motion.div
+							initial={{ opacity: 0, x: 300 }}
+							animate={{ opacity: 1, x: 0 }}
+							exit={{ opacity: 0, x: 300 }}
+							transition={{ duration: 0.22, ease: "easeInOut" }}
+							className='fixed right-0 top-0 h-screen w-[80vw] max-w-sm bg-brand-cream border-l border-brand-ink/5 overflow-y-auto md:hidden z-50'
+						>
+							<div className='px-4 pt-5 pb-6 space-y-1'>
+								{/* Close button */}
+								<div className='flex justify-end mb-4'>
 									<button
 										type='button'
-										onClick={handleSignOut}
-										className='w-full flex items-center justify-center gap-2 py-3 rounded-xl
-											text-sm font-bold text-red-500 hover:bg-red-50 transition-colors'
+										onClick={() => setIsOpen(false)}
+										className='p-2 rounded-xl text-brand-ink hover:bg-brand-ink/5 transition-colors'
+										aria-label='Close menu'
 									>
-										<LogOut size={16} />
-										Sign Out
+										<X size={22} />
 									</button>
-								) : (
-									<Link
-										to='/auth'
-										className='btn-primary w-full flex items-center justify-center gap-2 py-3'
-									>
-										<User size={16} />
-										Sign In
-									</Link>
+								</div>
+
+								{/* User greeting on mobile */}
+								{user && (
+									<div className='flex items-center gap-3 px-3 py-4 mb-2 border-b border-brand-ink/5'>
+										<div
+											className='w-10 h-10 rounded-xl bg-brand-orange text-white
+											flex items-center justify-center text-sm font-bold shrink-0'
+										>
+											{getInitials()}
+										</div>
+										<div className='min-w-0 flex-1'>
+											<p className='font-bold text-brand-ink text-sm truncate'>
+												{displayName}
+											</p>
+											<p className='text-xs text-brand-ink/40 truncate'>
+												{user.email}
+											</p>
+										</div>
+										{isAdmin && (
+											<span
+												className='text-[10px] font-bold uppercase tracking-wider
+												text-brand-orange bg-brand-orange/10 px-2 py-1 rounded-full whitespace-nowrap'
+											>
+												Admin
+											</span>
+										)}
+									</div>
 								)}
-							</motion.div>
-						</div>
-					</motion.div>
+
+								{navLinks.map((link, i) => {
+									const isActive = location.pathname === link.path;
+									return (
+										<motion.div
+											key={link.path}
+											initial={{ opacity: 0, x: 12 }}
+											animate={{ opacity: 1, x: 0 }}
+											transition={{ delay: i * 0.05 }}
+										>
+											<Link
+												to={link.path}
+												className={`flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-medium transition-all ${
+													isActive
+														? "bg-brand-orange/10 text-brand-orange"
+														: "text-brand-ink/70 hover:bg-brand-ink/5 hover:text-brand-ink"
+												}`}
+											>
+												<link.icon size={18} />
+												<span className='truncate'>
+													{link.name}
+												</span>
+												{isActive && (
+													<div className='ml-auto w-1.5 h-1.5 rounded-full bg-brand-orange shrink-0' />
+												)}
+											</Link>
+										</motion.div>
+									);
+								})}
+
+								<motion.div
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									transition={{ delay: navLinks.length * 0.05 }}
+									className='pt-3 border-t border-brand-ink/5 mt-2'
+								>
+									{user ? (
+										<button
+											type='button'
+											onClick={handleSignOut}
+											className='w-full flex items-center justify-center gap-2 py-3 rounded-xl
+												text-sm font-bold text-red-500 hover:bg-red-50 transition-colors'
+										>
+											<LogOut size={16} />
+											<span className='truncate'>Sign Out</span>
+										</button>
+									) : (
+										<Link
+											to='/auth'
+											className='btn-primary w-full flex items-center justify-center gap-2 py-3'
+										>
+											<User size={16} />
+											<span className='truncate'>Sign In</span>
+										</Link>
+									)}
+								</motion.div>
+							</div>
+						</motion.div>
+					</>
 				)}
 			</AnimatePresence>
 		</nav>

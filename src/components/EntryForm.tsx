@@ -2,7 +2,6 @@
 
 import { Save } from "lucide-react";
 import { LexiconEntryForm } from "../lib/types";
-import { BaseWordAutocomplete } from "./BaseWordAutocomplete";
 
 import { PARTS_OF_SPEECH } from "../lib/constants";
 

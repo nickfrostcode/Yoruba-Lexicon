@@ -4,15 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import {
-	Mail,
-	Lock,
-	User,
-	ArrowRight,
-	Eye,
-	EyeOff,
-	AtSign,
-} from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { AuthError } from "@supabase/supabase-js";
 
@@ -53,22 +45,22 @@ export const Auth: React.FC = () => {
 					email,
 					password,
 					options: {
-						data: { full_name: fullName},
+						data: { full_name: fullName },
 					},
 				});
 				if (error) throw error;
 
 				// Create profile if sign up successful
 				if (data.user) {
-					const { error: profileError } = await supabase
-						.from("profiles")
-						.insert([
-							{
-								id: data.user.id,
-								email,
-								full_name: fullName,
-							},
-						]);
+					const { error: profileError } = await (
+						supabase.from("profiles") as any
+					).insert([
+						{
+							id: data.user.id,
+							email,
+							full_name: fullName,
+						},
+					]);
 					if (profileError)
 						console.error("Error creating profile:", profileError);
 				}

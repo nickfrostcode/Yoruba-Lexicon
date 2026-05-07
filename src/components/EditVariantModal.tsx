@@ -1,6 +1,18 @@
+/** @format */
+
 import React, { useState, useEffect, FormEvent } from "react";
 import { supabase } from "../lib/supabase";
-import { LexiconEntryForm, LexiconEntry } from "../lib/types";
+import { LexiconEntryForm } from "../lib/types";
+
+type LexiconEntryRow = {
+	base_word_id: string;
+	word: string;
+	phonetic: string | null;
+	part_of_speech: string | null;
+	definition: string;
+	example_yoruba: string | null;
+	example_english: string | null;
+};
 import { EntryForm } from "./EntryForm";
 import { Modal } from "./Modal";
 import { toast } from "sonner";
@@ -12,7 +24,11 @@ interface EditVariantModalProps {
 	onSuccess: () => void;
 }
 
-export const EditVariantModal: React.FC<EditVariantModalProps> = ({ id, onClose, onSuccess }) => {
+export const EditVariantModal: React.FC<EditVariantModalProps> = ({
+	id,
+	onClose,
+	onSuccess,
+}) => {
 	const [loading, setLoading] = useState(false);
 	const [entry, setEntry] = useState<LexiconEntryForm | null>(null);
 
@@ -21,12 +37,15 @@ export const EditVariantModal: React.FC<EditVariantModalProps> = ({ id, onClose,
 	}, [id]);
 
 	const fetchEntry = async () => {
+		if (!id) return;
 		setLoading(true);
-		const { data, error } = await supabase
-			.from("lexicon_entries")
+		const { data, error } = (await (supabase.from("lexicon_entries") as any)
 			.select("*, base_word:base_words(id, word)")
 			.eq("id", id)
-			.single();
+			.single()) as {
+			data: LexiconEntryRow | null;
+			error: unknown;
+		};
 
 		if (error || !data) {
 			toast.error("Could not load entry");
@@ -49,8 +68,7 @@ export const EditVariantModal: React.FC<EditVariantModalProps> = ({ id, onClose,
 		event.preventDefault();
 		if (!entry || !id) return;
 
-		const { error } = await supabase
-			.from("lexicon_entries")
+		const { error } = await (supabase.from("lexicon_entries") as any)
 			.update({
 				word: entry.word.trim(),
 				phonetic: entry.phonetic,
@@ -72,16 +90,16 @@ export const EditVariantModal: React.FC<EditVariantModalProps> = ({ id, onClose,
 	};
 
 	return (
-		<Modal open={!!id} onClose={onClose} title="Edit Variant">
+		<Modal open={!!id} onClose={onClose} title='Edit Variant'>
 			{loading ? (
-				<Loader text="Loading entry..." />
+				<Loader text='Loading entry...' />
 			) : entry ? (
-				<EntryForm 
+				<EntryForm
 					entry={entry}
 					onChange={setEntry}
 					onSubmit={handleUpdate}
 					onCancel={onClose}
-					submitLabel="Save Changes"
+					submitLabel='Save Changes'
 				/>
 			) : null}
 		</Modal>

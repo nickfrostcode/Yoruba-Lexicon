@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle, Edit3, Trash2, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
 import { LexiconEntry } from "../lib/types";
 
 interface AdminLexiconCardProps {
@@ -20,23 +19,6 @@ export const AdminLexiconCard: React.FC<AdminLexiconCardProps> = ({
 	onDelete,
 }) => {
 	const [isExpanded, setIsExpanded] = useState(false);
-
-	const speak = (text: string) => {
-		speechSynthesis.cancel();
-		const voices = speechSynthesis.getVoices();
-		const yorubaVoice = voices.find((v) => v.lang === "yo-NG");
-
-		if (yorubaVoice) {
-			const utterance = new SpeechSynthesisUtterance(text);
-			utterance.voice = yorubaVoice;
-			utterance.lang = "yo-NG";
-			speechSynthesis.speak(utterance);
-			return;
-		}
-
-		toast.error("Yoruba voice not available on your device.");
-	};
-
 	return (
 		<div
 			className={`glass-card p-8 rounded-2xl transition-all duration-300 cursor-pointer group hover:border-brand-orange/30 ${

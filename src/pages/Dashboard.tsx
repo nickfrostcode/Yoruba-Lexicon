@@ -1,7 +1,6 @@
 /** @format */
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -9,7 +8,6 @@ import {
 	Clock,
 	CheckCircle,
 	AlertCircle,
-	User,
 	Trash2,
 	Edit3,
 	ChevronDown,
@@ -17,9 +15,9 @@ import {
 	BookA,
 	Layers,
 	Save,
-	Loader2
+	Loader2,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { toast } from "sonner";
 import { Contribution, BaseWord } from "../lib/types";
 import { normalizeWord, getAlphabetChar } from "../lib/utils";
@@ -35,18 +33,18 @@ const LOAD_MORE_COUNT = 6;
 type Tab = "overview" | "base-words" | "variants";
 
 export const Dashboard: React.FC = () => {
-	const navigate = useNavigate();
 	const { user } = useAuth();
 	const [activeTab, setActiveTab] = useState<Tab>("overview");
-	
+
 	// Modals
-	const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
-	
+	const [editingVariantId, setEditingVariantId] = useState<string | null>(
+		null,
+	);
+
 	// Overview State
 	const [contributions, setContributions] = useState<Contribution[]>([]);
 	const [loadingContributions, setLoadingContributions] = useState(true);
 	const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
-	const [loadingMore, setLoadingMore] = useState(false);
 
 	// Base Word Form State
 	const [baseWordInput, setBaseWordInput] = useState("");
@@ -58,8 +56,10 @@ export const Dashboard: React.FC = () => {
 	const [selectedLetter, setSelectedLetter] = useState("A");
 	const [baseWords, setBaseWords] = useState<BaseWord[]>([]);
 	const [loadingBaseWords, setLoadingBaseWords] = useState(false);
-	const [selectedBaseWord, setSelectedBaseWord] = useState<BaseWord | null>(null);
-	
+	const [selectedBaseWord, setSelectedBaseWord] = useState<BaseWord | null>(
+		null,
+	);
+
 	const [variantForm, setVariantForm] = useState({
 		word: "",
 		phonetic: "",
@@ -85,7 +85,9 @@ export const Dashboard: React.FC = () => {
 	const fetchContributions = async (userId: string) => {
 		setLoadingContributions(true);
 		const { data, error } = await (supabase.from("lexicon_entries") as any)
-			.select("id, word, phonetic, definition, status, created_at, base_word_id, base_word:base_words(id, word, normalized_word)")
+			.select(
+				"id, word, phonetic, definition, status, created_at, base_word_id, base_word:base_words(id, word, normalized_word)",
+			)
 			.eq("contributor_id", userId)
 			.order("created_at", { ascending: false });
 
@@ -113,14 +115,13 @@ export const Dashboard: React.FC = () => {
 	};
 
 	const handleLoadMore = async () => {
-		setLoadingMore(true);
 		await new Promise((r) => setTimeout(r, 400));
 		setVisibleCount((prev) => prev + LOAD_MORE_COUNT);
-		setLoadingMore(false);
 	};
 
 	const deleteEntry = async (id: string) => {
-		if (!confirm("Are you sure you want to delete this contribution?")) return;
+		if (!confirm("Are you sure you want to delete this contribution?"))
+			return;
 
 		const { error } = await (supabase.from("lexicon_entries") as any)
 			.delete()
@@ -152,7 +153,7 @@ export const Dashboard: React.FC = () => {
 			const normalized = normalizeWord(word);
 			const alphabet = getAlphabetChar(word);
 
-			const { error } = await supabase.from("base_words").insert([
+			const { error } = await (supabase.from("base_words") as any).insert([
 				{
 					word,
 					normalized_word: normalized,
@@ -164,14 +165,14 @@ export const Dashboard: React.FC = () => {
 			]);
 
 			if (error) {
-				if (error.code === '23505') {
+				if (error.code === "23505") {
 					toast.error("This base word already exists.");
 				} else {
 					throw error;
 				}
 				return;
 			}
-			
+
 			toast.success("Base word added successfully!");
 			setBaseWordInput("");
 			setBaseWordSyllables("");
@@ -193,7 +194,9 @@ export const Dashboard: React.FC = () => {
 
 		setIsSubmittingVariant(true);
 		try {
-			const { error } = await supabase.from("lexicon_entries").insert([
+			const { error } = await (
+				supabase.from("lexicon_entries") as any
+			).insert([
 				{
 					base_word_id: selectedBaseWord.id,
 					word: variantForm.word.trim(),
@@ -226,7 +229,7 @@ export const Dashboard: React.FC = () => {
 	};
 
 	const insertCharToVariantWord = (char: string) => {
-		setVariantForm(prev => ({ ...prev, word: prev.word + char }));
+		setVariantForm((prev) => ({ ...prev, word: prev.word + char }));
 	};
 
 	const displayFirstName =
@@ -236,7 +239,6 @@ export const Dashboard: React.FC = () => {
 
 	const visibleContributions = contributions.slice(0, visibleCount);
 	const hasMore = visibleCount < contributions.length;
-	const hiddenCount = contributions.length - visibleCount;
 
 	return (
 		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
@@ -248,7 +250,9 @@ export const Dashboard: React.FC = () => {
 					<h1 className='text-4xl font-serif font-bold'>
 						Hello, {displayFirstName}
 					</h1>
-					<p className='text-brand-ink/60 font-medium'>Manage your contributions</p>
+					<p className='text-brand-ink/60 font-medium'>
+						Manage your contributions
+					</p>
 				</div>
 			</div>
 
@@ -293,25 +297,52 @@ export const Dashboard: React.FC = () => {
 				{/* Main Content Area */}
 				<div className='md:col-span-3'>
 					{activeTab === "overview" && (
-						<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className='space-y-8'>
+						<motion.div
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							className='space-y-8'
+						>
 							<div className='grid grid-cols-1 sm:grid-cols-3 gap-6'>
 								<div className='glass-card p-6 rounded-2xl border border-brand-ink/5'>
 									<StatItem
-										icon={<CheckCircle size={24} className='text-green-500' />}
+										icon={
+											<CheckCircle
+												size={24}
+												className='text-green-500'
+											/>
+										}
 										label='Approved'
-										value={contributions.filter((c) => c.status === "approved").length}
+										value={
+											contributions.filter(
+												(c) => c.status === "approved",
+											).length
+										}
 									/>
 								</div>
 								<div className='glass-card p-6 rounded-2xl border border-brand-ink/5'>
 									<StatItem
-										icon={<Clock size={24} className='text-brand-orange' />}
+										icon={
+											<Clock
+												size={24}
+												className='text-brand-orange'
+											/>
+										}
 										label='Pending'
-										value={contributions.filter((c) => c.status === "pending").length}
+										value={
+											contributions.filter(
+												(c) => c.status === "pending",
+											).length
+										}
 									/>
 								</div>
 								<div className='glass-card p-6 rounded-2xl border border-brand-ink/5'>
 									<StatItem
-										icon={<AlertCircle size={24} className='text-brand-ink/20' />}
+										icon={
+											<AlertCircle
+												size={24}
+												className='text-brand-ink/20'
+											/>
+										}
 										label='Total'
 										value={contributions.length}
 									/>
@@ -319,62 +350,110 @@ export const Dashboard: React.FC = () => {
 							</div>
 
 							<div className='p-8 rounded-3xl bg-brand-orange text-white shadow-lg'>
-								<h3 className='text-2xl font-serif font-bold mb-4'>How to Contribute</h3>
+								<h3 className='text-2xl font-serif font-bold mb-4'>
+									How to Contribute
+								</h3>
 								<p className='text-white/80 leading-relaxed mb-6'>
-									Our lexicon follows a Base-Word → Variant architecture. This ensures a clean grouping of dialects and precise definitions.
+									Our lexicon follows a Base-Word → Variant
+									architecture. This ensures a clean grouping of
+									dialects and precise definitions.
 								</p>
-								<div className="grid md:grid-cols-2 gap-6">
-									<div className="bg-white/10 p-5 rounded-2xl">
-										<h4 className="font-bold flex items-center space-x-2 mb-2">
-											<span className="w-6 h-6 rounded-full bg-white text-brand-orange flex items-center justify-center text-sm">1</span>
+								<div className='grid md:grid-cols-2 gap-6'>
+									<div className='bg-white/10 p-5 rounded-2xl'>
+										<h4 className='font-bold flex items-center space-x-2 mb-2'>
+											<span className='w-6 h-6 rounded-full bg-white text-brand-orange flex items-center justify-center text-sm'>
+												1
+											</span>
 											<span>Add a Base Word</span>
 										</h4>
-										<p className="text-sm text-white/80">Check if the root word exists under "Base Words". If it doesn't, add it without specific dialectal tone marks (e.g. Olukọ).</p>
+										<p className='text-sm text-white/80'>
+											Check if the root word exists under "Base
+											Words". If it doesn't, add it without specific
+											dialectal tone marks (e.g. Olukọ).
+										</p>
 									</div>
-									<div className="bg-white/10 p-5 rounded-2xl">
-										<h4 className="font-bold flex items-center space-x-2 mb-2">
-											<span className="w-6 h-6 rounded-full bg-white text-brand-orange flex items-center justify-center text-sm">2</span>
+									<div className='bg-white/10 p-5 rounded-2xl'>
+										<h4 className='font-bold flex items-center space-x-2 mb-2'>
+											<span className='w-6 h-6 rounded-full bg-white text-brand-orange flex items-center justify-center text-sm'>
+												2
+											</span>
 											<span>Add carefully marked Variants</span>
 										</h4>
-										<p className="text-sm text-white/80">Under "Variants", find your base word and add your fully tone-marked word, along with meaning and phonetic signature.</p>
+										<p className='text-sm text-white/80'>
+											Under "Variants", find your base word and add
+											your fully tone-marked word, along with meaning
+											and phonetic signature.
+										</p>
 									</div>
 								</div>
 							</div>
 
 							<div>
-								<h3 className='text-2xl font-serif font-bold mb-6'>My Contributions</h3>
+								<h3 className='text-2xl font-serif font-bold mb-6'>
+									My Contributions
+								</h3>
 								<div className='grid gap-4 grid-cols-1 md:grid-cols-2'>
 									{loadingContributions ? (
-										<div className="col-span-2"><Loader text="Loading contributions..." /></div>
+										<div className='col-span-2'>
+											<Loader text='Loading contributions...' />
+										</div>
 									) : contributions.length > 0 ? (
 										visibleContributions.map((contribution) => (
-											<div key={contribution.id} className='glass-card p-5 rounded-xl border border-brand-ink/5 flex flex-col justify-between'>
+											<div
+												key={contribution.id}
+												className='glass-card p-5 rounded-xl border border-brand-ink/5 flex flex-col justify-between'
+											>
 												<div>
 													<div className='flex items-center space-x-3 mb-2'>
 														<h4 className='text-xl font-serif font-bold'>
 															{contribution.word}{" "}
-															{contribution.phonetic && <span className='text-brand-ink/40 text-sm'>({contribution.phonetic})</span>}
+															{contribution.phonetic && (
+																<span className='text-brand-ink/40 text-sm'>
+																	({contribution.phonetic})
+																</span>
+															)}
 														</h4>
-														<span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-																contribution.status === "approved" ? "bg-green-100 text-green-600" : "bg-brand-orange/10 text-brand-orange"
-															}`}>
+														<span
+															className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+																contribution.status ===
+																"approved"
+																	? "bg-green-100 text-green-600"
+																	: "bg-brand-orange/10 text-brand-orange"
+															}`}
+														>
 															{contribution.status}
 														</span>
 													</div>
 													<p className='text-brand-ink/60 text-sm line-clamp-2'>
 														{contribution.definition}
 													</p>
-													<p className='text-brand-ink/40 text-xs mt-2'>Base: {contribution.base_word?.word}</p>
+													<p className='text-brand-ink/40 text-xs mt-2'>
+														Base: {contribution.base_word?.word}
+													</p>
 												</div>
 												<div className='flex items-center justify-between mt-4 pt-4 border-t border-brand-ink/5'>
 													<div className='text-xs font-medium text-brand-ink/40'>
-														{new Date(contribution.created_at).toLocaleDateString()}
+														{new Date(
+															contribution.created_at,
+														).toLocaleDateString()}
 													</div>
-													<div className="flex gap-2">
-														<button onClick={() => setEditingVariantId(contribution.id)} className='text-brand-ink/20 hover:text-brand-ink transition-colors'>
+													<div className='flex gap-2'>
+														<button
+															onClick={() =>
+																setEditingVariantId(
+																	contribution.id,
+																)
+															}
+															className='text-brand-ink/20 hover:text-brand-ink transition-colors'
+														>
 															<Edit3 size={16} />
 														</button>
-														<button onClick={() => deleteEntry(contribution.id)} className='text-brand-ink/20 hover:text-red-500 transition-colors'>
+														<button
+															onClick={() =>
+																deleteEntry(contribution.id)
+															}
+															className='text-brand-ink/20 hover:text-red-500 transition-colors'
+														>
 															<Trash2 size={16} />
 														</button>
 													</div>
@@ -382,11 +461,16 @@ export const Dashboard: React.FC = () => {
 											</div>
 										))
 									) : (
-										<div className="col-span-2 text-center py-12 text-brand-ink/40 font-medium">No contributions yet.</div>
+										<div className='col-span-2 text-center py-12 text-brand-ink/40 font-medium'>
+											No contributions yet.
+										</div>
 									)}
 								</div>
 								{hasMore && (
-									<button onClick={handleLoadMore} className='w-full py-4 flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-widest text-brand-orange hover:bg-brand-orange/5 mt-4 rounded-xl transition-colors'>
+									<button
+										onClick={handleLoadMore}
+										className='w-full py-4 flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-widest text-brand-orange hover:bg-brand-orange/5 mt-4 rounded-xl transition-colors'
+									>
 										<ChevronDown size={16} /> Load More
 									</button>
 								)}
@@ -395,23 +479,46 @@ export const Dashboard: React.FC = () => {
 					)}
 
 					{activeTab === "base-words" && (
-						<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className='glass-card p-8 rounded-3xl border border-brand-ink/5'>
-							<h2 className='text-3xl font-serif font-bold mb-2'>Add Base Word</h2>
-							<p className='text-brand-ink/60 mb-8'>Register a root word before adding dialectal or tone-specific variants.</p>
-							
-							<div className="bg-brand-orange/10 p-4 rounded-xl border border-brand-orange/20 mb-8">
-								<h4 className="font-bold text-brand-orange mb-2 uppercase tracking-widest text-xs">Important Guidelines</h4>
-								<ul className="list-disc list-inside text-sm text-brand-ink/80 space-y-1">
-									<li>Use accurate sub-dotted letters: <strong>ẹ, ọ, ṣ</strong>. Do not use standard e, o, s if they shouldn't be.</li>
-									<li>Do <strong>not</strong> include tone marks (á, à) on the base word unless the root naturally requires it to distinguish meaning globally.</li>
-									<li>The syllable count is registered at the base word level.</li>
+						<motion.div
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							className='glass-card p-8 rounded-3xl border border-brand-ink/5'
+						>
+							<h2 className='text-3xl font-serif font-bold mb-2'>
+								Add Base Word
+							</h2>
+							<p className='text-brand-ink/60 mb-8'>
+								Register a root word before adding dialectal or
+								tone-specific variants.
+							</p>
+
+							<div className='bg-brand-orange/10 p-4 rounded-xl border border-brand-orange/20 mb-8'>
+								<h4 className='font-bold text-brand-orange mb-2 uppercase tracking-widest text-xs'>
+									Important Guidelines
+								</h4>
+								<ul className='list-disc list-inside text-sm text-brand-ink/80 space-y-1'>
+									<li>
+										Use accurate sub-dotted letters:{" "}
+										<strong>ẹ, ọ, ṣ</strong>. Do not use standard e,
+										o, s if they shouldn't be.
+									</li>
+									<li>
+										Do <strong>not</strong> include tone marks (á, à)
+										on the base word unless the root naturally
+										requires it to distinguish meaning globally.
+									</li>
+									<li>
+										The syllable count is registered at the base word
+										level.
+									</li>
 								</ul>
 							</div>
 
 							<form onSubmit={submitBaseWord} className='space-y-6'>
 								<div className='space-y-2'>
 									<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-										Word (Yorùbá) <span className='text-brand-orange'>*</span>
+										Word (Yorùbá){" "}
+										<span className='text-brand-orange'>*</span>
 									</label>
 									<input
 										type='text'
@@ -421,12 +528,17 @@ export const Dashboard: React.FC = () => {
 										onChange={(e) => setBaseWordInput(e.target.value)}
 										required
 									/>
-									<YorubaKeyboard onCharClick={(char) => setBaseWordInput(prev => prev + char)} />
+									<YorubaKeyboard
+										onCharClick={(char) =>
+											setBaseWordInput((prev) => prev + char)
+										}
+									/>
 								</div>
-								
+
 								<div className='space-y-2'>
 									<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-										Syllables <span className='text-brand-orange'>*</span>
+										Syllables{" "}
+										<span className='text-brand-orange'>*</span>
 									</label>
 									<input
 										type='number'
@@ -434,7 +546,9 @@ export const Dashboard: React.FC = () => {
 										className='input-field'
 										placeholder='e.g. 3'
 										value={baseWordSyllables}
-										onChange={(e) => setBaseWordSyllables(e.target.value)}
+										onChange={(e) =>
+											setBaseWordSyllables(e.target.value)
+										}
 										required
 									/>
 								</div>
@@ -452,8 +566,16 @@ export const Dashboard: React.FC = () => {
 									/>
 								</div>
 
-								<button type='submit' disabled={isSubmittingBaseWord} className='btn-primary w-full flex items-center justify-center space-x-2'>
-									{isSubmittingBaseWord ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+								<button
+									type='submit'
+									disabled={isSubmittingBaseWord}
+									className='btn-primary w-full flex items-center justify-center space-x-2'
+								>
+									{isSubmittingBaseWord ? (
+										<Loader2 size={20} className='animate-spin' />
+									) : (
+										<Save size={20} />
+									)}
 									<span>Save Base Word</span>
 								</button>
 							</form>
@@ -461,19 +583,27 @@ export const Dashboard: React.FC = () => {
 					)}
 
 					{activeTab === "variants" && (
-						<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className='space-y-6'>
+						<motion.div
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							className='space-y-6'
+						>
 							{!selectedBaseWord ? (
-								<div className="glass-card p-8 rounded-3xl border border-brand-ink/5">
-									<h2 className='text-3xl font-serif font-bold mb-2'>Select a Base Word</h2>
-									<p className='text-brand-ink/60 mb-8'>Choose a letter to load available base words.</p>
-									
-									<div className="flex flex-wrap gap-2 mb-8">
-										{YORUBA_ALPHABET.map(letter => (
+								<div className='glass-card p-8 rounded-3xl border border-brand-ink/5'>
+									<h2 className='text-3xl font-serif font-bold mb-2'>
+										Select a Base Word
+									</h2>
+									<p className='text-brand-ink/60 mb-8'>
+										Choose a letter to load available base words.
+									</p>
+
+									<div className='flex flex-wrap gap-2 mb-8'>
+										{YORUBA_ALPHABET.map((letter) => (
 											<button
 												key={letter}
 												onClick={() => setSelectedLetter(letter)}
 												className={`w-10 h-10 rounded-lg font-bold transition-all cursor-pointer ${
-													selectedLetter === letter 
+													selectedLetter === letter
 														? "bg-brand-orange text-white shadow-md"
 														: "bg-white border border-brand-ink/10 text-brand-ink hover:border-brand-orange/30 hover:text-brand-orange"
 												}`}
@@ -483,47 +613,76 @@ export const Dashboard: React.FC = () => {
 										))}
 									</div>
 
-									<div className="bg-white rounded-2xl border border-brand-ink/5 overflow-hidden">
+									<div className='bg-white rounded-2xl border border-brand-ink/5 overflow-hidden'>
 										{loadingBaseWords ? (
-											<Loader text="Loading base words..." />
+											<Loader text='Loading base words...' />
 										) : baseWords.length > 0 ? (
-											<ul className="divide-y divide-brand-ink/5">
-												{baseWords.map(bw => (
-													<li key={bw.id} 
-														onClick={() => setSelectedBaseWord(bw)} 
-														className="p-4 hover:bg-brand-orange/5 cursor-pointer flex justify-between items-center transition-colors group"
+											<ul className='divide-y divide-brand-ink/5'>
+												{baseWords.map((bw) => (
+													<li
+														key={bw.id}
+														onClick={() =>
+															setSelectedBaseWord(bw)
+														}
+														className='p-4 hover:bg-brand-orange/5 cursor-pointer flex justify-between items-center transition-colors group'
 													>
 														<div>
-															<span className="font-serif font-bold text-lg group-hover:text-brand-orange transition-colors">{bw.word}</span>
-															{bw.note && <p className="text-xs text-brand-ink/40 line-clamp-1">{bw.note}</p>}
+															<span className='font-serif font-bold text-lg group-hover:text-brand-orange transition-colors'>
+																{bw.word}
+															</span>
+															{bw.note && (
+																<p className='text-xs text-brand-ink/40 line-clamp-1'>
+																	{bw.note}
+																</p>
+															)}
 														</div>
-														<Plus size={20} className="text-brand-ink/20 group-hover:text-brand-orange" />
+														<Plus
+															size={20}
+															className='text-brand-ink/20 group-hover:text-brand-orange'
+														/>
 													</li>
 												))}
 											</ul>
 										) : (
-											<div className="py-12 text-center text-brand-ink/40">
-												No base words found for letter {selectedLetter}.
+											<div className='py-12 text-center text-brand-ink/40'>
+												No base words found for letter{" "}
+												{selectedLetter}.
 											</div>
 										)}
 									</div>
 								</div>
 							) : (
-								<div className="glass-card p-8 rounded-3xl border border-brand-ink/5">
-									<div className="flex items-center justify-between mb-8 pb-4 border-b border-brand-ink/5">
+								<div className='glass-card p-8 rounded-3xl border border-brand-ink/5'>
+									<div className='flex items-center justify-between mb-8 pb-4 border-b border-brand-ink/5'>
 										<div>
-											<h2 className='text-3xl font-serif font-bold mb-1'>Add Variant</h2>
-											<p className="text-brand-ink/60">For base word: <span className="font-bold text-brand-orange">{selectedBaseWord.word}</span></p>
+											<h2 className='text-3xl font-serif font-bold mb-1'>
+												Add Variant
+											</h2>
+											<p className='text-brand-ink/60'>
+												For base word:{" "}
+												<span className='font-bold text-brand-orange'>
+													{selectedBaseWord.word}
+												</span>
+											</p>
 										</div>
-										<button onClick={() => setSelectedBaseWord(null)} className="text-sm font-bold uppercase tracking-widest text-brand-ink/40 hover:text-brand-orange transition-colors">
+										<button
+											onClick={() => setSelectedBaseWord(null)}
+											className='text-sm font-bold uppercase tracking-widest text-brand-ink/40 hover:text-brand-orange transition-colors'
+										>
 											Change
 										</button>
 									</div>
 
-									<div className="bg-brand-orange/10 p-4 rounded-xl border border-brand-orange/20 mb-8">
-										<h4 className="font-bold text-brand-orange mb-2 uppercase tracking-widest text-xs">Tone Marking Guidelines</h4>
-										<p className="text-sm text-brand-ink/80 leading-relaxed">
-											Unlike the base word, the variant <strong>must</strong> include the precise tone marks (´, `, etc.) that define its specific pronunciation and meaning. Example: <em>Olùkọ́</em>.
+									<div className='bg-brand-orange/10 p-4 rounded-xl border border-brand-orange/20 mb-8'>
+										<h4 className='font-bold text-brand-orange mb-2 uppercase tracking-widest text-xs'>
+											Tone Marking Guidelines
+										</h4>
+										<p className='text-sm text-brand-ink/80 leading-relaxed'>
+											Unlike the base word, the variant{" "}
+											<strong>must</strong> include the precise tone
+											marks (´, `, etc.) that define its specific
+											pronunciation and meaning. Example:{" "}
+											<em>Olùkọ́</em>.
 										</p>
 									</div>
 
@@ -531,17 +690,27 @@ export const Dashboard: React.FC = () => {
 										<div className='grid md:grid-cols-2 gap-6'>
 											<div className='space-y-2 md:col-span-2'>
 												<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-													Fully Tone-Marked Word <span className='text-brand-orange'>*</span>
+													Fully Tone-Marked Word{" "}
+													<span className='text-brand-orange'>
+														*
+													</span>
 												</label>
 												<input
 													type='text'
 													className='input-field'
 													placeholder='e.g. Olùkọ́'
 													value={variantForm.word}
-													onChange={(e) => setVariantForm({...variantForm, word: e.target.value})}
+													onChange={(e) =>
+														setVariantForm({
+															...variantForm,
+															word: e.target.value,
+														})
+													}
 													required
 												/>
-												<YorubaKeyboard onCharClick={insertCharToVariantWord} />
+												<YorubaKeyboard
+													onCharClick={insertCharToVariantWord}
+												/>
 											</div>
 
 											<div className='space-y-2'>
@@ -553,37 +722,65 @@ export const Dashboard: React.FC = () => {
 													className='input-field'
 													placeholder='e.g. m-d-r'
 													value={variantForm.phonetic}
-													onChange={(e) => setVariantForm({...variantForm, phonetic: e.target.value})}
+													onChange={(e) =>
+														setVariantForm({
+															...variantForm,
+															phonetic: e.target.value,
+														})
+													}
 												/>
-												<p className="text-[10px] text-brand-ink/40 ml-1">Use 'd' (low), 'r' (high), 'm' (mid).</p>
+												<p className='text-[10px] text-brand-ink/40 ml-1'>
+													Use 'd' (low), 'r' (high), 'm' (mid).
+												</p>
 											</div>
 
 											<div className='space-y-2'>
 												<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-													Part of Speech <span className='text-brand-orange'>*</span>
+													Part of Speech{" "}
+													<span className='text-brand-orange'>
+														*
+													</span>
 												</label>
 												<select
 													className='input-field appearance-none cursor-pointer'
 													value={variantForm.part_of_speech}
-													onChange={(e) => setVariantForm({...variantForm, part_of_speech: e.target.value})}
+													onChange={(e) =>
+														setVariantForm({
+															...variantForm,
+															part_of_speech: e.target.value,
+														})
+													}
 													required
 												>
 													{PARTS_OF_SPEECH.map((pos) => (
-														<option key={pos.value} value={pos.value}>{pos.label}</option>
+														<option
+															key={pos.value}
+															value={pos.value}
+														>
+															{pos.label}
+														</option>
 													))}
 												</select>
 											</div>
 
 											<div className='space-y-2 md:col-span-2'>
 												<label className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 ml-1'>
-													Definition <span className='text-brand-orange'>*</span>
+													Definition{" "}
+													<span className='text-brand-orange'>
+														*
+													</span>
 												</label>
 												<textarea
 													rows={2}
 													className='input-field py-3'
 													placeholder='Provide a clear definition in English...'
 													value={variantForm.definition}
-													onChange={(e) => setVariantForm({...variantForm, definition: e.target.value})}
+													onChange={(e) =>
+														setVariantForm({
+															...variantForm,
+															definition: e.target.value,
+														})
+													}
 													required
 												/>
 											</div>
@@ -597,7 +794,12 @@ export const Dashboard: React.FC = () => {
 													className='input-field py-3'
 													placeholder='e.g. Òlùkọ̀ mi dùn'
 													value={variantForm.example_yoruba}
-													onChange={(e) => setVariantForm({...variantForm, example_yoruba: e.target.value})}
+													onChange={(e) =>
+														setVariantForm({
+															...variantForm,
+															example_yoruba: e.target.value,
+														})
+													}
 												/>
 											</div>
 
@@ -610,13 +812,29 @@ export const Dashboard: React.FC = () => {
 													className='input-field py-3'
 													placeholder='e.g. My teacher is nice'
 													value={variantForm.example_english}
-													onChange={(e) => setVariantForm({...variantForm, example_english: e.target.value})}
+													onChange={(e) =>
+														setVariantForm({
+															...variantForm,
+															example_english: e.target.value,
+														})
+													}
 												/>
 											</div>
 										</div>
 
-										<button type='submit' disabled={isSubmittingVariant} className='btn-primary w-full flex items-center justify-center space-x-2 mt-4'>
-											{isSubmittingVariant ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+										<button
+											type='submit'
+											disabled={isSubmittingVariant}
+											className='btn-primary w-full flex items-center justify-center space-x-2 mt-4'
+										>
+											{isSubmittingVariant ? (
+												<Loader2
+													size={20}
+													className='animate-spin'
+												/>
+											) : (
+												<Save size={20} />
+											)}
 											<span>Submit Variant</span>
 										</button>
 									</form>
@@ -627,10 +845,12 @@ export const Dashboard: React.FC = () => {
 				</div>
 			</div>
 
-			<EditVariantModal 
-				id={editingVariantId} 
-				onClose={() => setEditingVariantId(null)} 
-				onSuccess={() => { if(user) fetchContributions(user.id) }} 
+			<EditVariantModal
+				id={editingVariantId}
+				onClose={() => setEditingVariantId(null)}
+				onSuccess={() => {
+					if (user) fetchContributions(user.id);
+				}}
 			/>
 		</div>
 	);
@@ -642,8 +862,10 @@ const StatItem: React.FC<{
 	value: number;
 }> = ({ icon, label, value }) => (
 	<div className='flex flex-col items-center justify-center text-center'>
-		<div className="mb-2 bg-brand-ink/5 p-3 rounded-full">{icon}</div>
+		<div className='mb-2 bg-brand-ink/5 p-3 rounded-full'>{icon}</div>
 		<span className='text-2xl font-bold font-serif mb-1'>{value}</span>
-		<span className='text-xs font-bold uppercase tracking-widest text-brand-ink/40'>{label}</span>
+		<span className='text-xs font-bold uppercase tracking-widest text-brand-ink/40'>
+			{label}
+		</span>
 	</div>
 );
