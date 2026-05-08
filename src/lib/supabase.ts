@@ -90,7 +90,7 @@ interface Database {
 					example_yoruba: string | null;
 					example_english: string | null;
 					contributor_id: string | null;
-					status: "pending" | "approved";
+					status: "unverified" | "verified";
 					created_at: string;
 				};
 				Insert: {
@@ -103,7 +103,7 @@ interface Database {
 					example_yoruba?: string | null;
 					example_english?: string | null;
 					contributor_id?: string | null;
-					status?: "pending" | "approved";
+					status?: "unverified" | "verified";
 					created_at?: string;
 				};
 				Update: {
@@ -116,7 +116,7 @@ interface Database {
 					example_yoruba?: string | null;
 					example_english?: string | null;
 					contributor_id?: string | null;
-					status?: "pending" | "approved";
+					status?: "unverified" | "verified";
 					created_at?: string;
 				};
 			};
