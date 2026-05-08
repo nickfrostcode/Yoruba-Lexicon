@@ -31,8 +31,7 @@ export const Browse: React.FC = () => {
 		setLoading(true);
 		let query = supabase
 			.from("base_words")
-			.select("id, word, normalized_word, syllables, lexicon_entries!inner(id)")
-			.eq("lexicon_entries.status", "approved")
+			.select("id, word, normalized_word, syllables, lexicon_entries!inner(id, status)")
 			.order("word", { ascending: true });
 
 		if (selectedLetter !== "all") {
@@ -44,12 +43,13 @@ export const Browse: React.FC = () => {
 		if (error) {
 			console.error("Error fetching entries:", error);
 		} else {
-            // Because there might be multiple approved variants, we just map the length
+            // Because there might be multiple variants
             const formatted = (data as any[] || []).map(b => ({
                 id: b.id,
                 word: b.word,
 				syllables: b.syllables,
-                variant_count: Array.isArray(b.lexicon_entries) ? b.lexicon_entries.length : 0
+                variant_count: Array.isArray(b.lexicon_entries) ? b.lexicon_entries.length : 0,
+				has_verified: Array.isArray(b.lexicon_entries) ? b.lexicon_entries.some((e: any) => e.status === "verified") : false
             }));
             
             // Due to !inner, a single base_word may be duplicated if PostgREST flattens it, but usually it nests.

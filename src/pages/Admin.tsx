@@ -38,8 +38,8 @@ export const Admin = () => {
 	const [stats, setStats] = useState({
 		totalBaseWords: 0,
 		totalVariants: 0,
-		pendingVariants: 0,
-		approvedVariants: 0,
+		unverifiedVariants: 0,
+		verifiedVariants: 0,
 	});
 
 	const [baseWords, setBaseWords] = useState<BaseWord[]>([]);
@@ -48,7 +48,7 @@ export const Admin = () => {
 	const [variants, setVariants] = useState<LexiconEntry[]>([]);
 	const [loadingVariants, setLoadingVariants] = useState(false);
 	const [variantsFilter, setVariantsFilter] = useState<
-		"all" | "approved" | "pending"
+		"all" | "verified" | "unverified"
 	>("all");
 
 	const [visibleBaseWords, setVisibleBaseWords] = useState(LOAD_MORE_COUNT);
@@ -71,18 +71,18 @@ export const Admin = () => {
 					.select("status", { count: "exact" }),
 			]);
 
-		const approved =
-			(variantsData as any)?.filter((v: any) => v.status === "approved")
+		const verified =
+			(variantsData as any)?.filter((v: any) => v.status === "verified")
 				.length || 0;
-		const pending =
-			(variantsData as any)?.filter((v: any) => v.status === "pending")
+		const unverified =
+			(variantsData as any)?.filter((v: any) => v.status === "unverified")
 				.length || 0;
 
 		setStats({
 			totalBaseWords: bwCount || 0,
 			totalVariants: vCount || 0,
-			pendingVariants: pending,
-			approvedVariants: approved,
+			unverifiedVariants: unverified,
+			verifiedVariants: verified,
 		});
 	};
 
@@ -114,16 +114,16 @@ export const Admin = () => {
 
 	const handleApprove = async (id: string) => {
 		const { error } = await (supabase.from("lexicon_entries") as any)
-			.update({ status: "approved" })
+			.update({ status: "verified" })
 			.eq("id", id);
 		if (error) {
 			toast.error("Error approving entry");
 			return;
 		}
 		setVariants((curr) =>
-			curr.map((v) => (v.id === id ? { ...v, status: "approved" } : v)),
+			curr.map((v) => (v.id === id ? { ...v, status: "verified" } : v)),
 		);
-		toast.success("Entry approved");
+		toast.success("Entry verified");
 	};
 
 	const handleDeleteVariant = async (id: string) => {
@@ -251,11 +251,11 @@ export const Admin = () => {
 											size={24}
 											className='text-green-500 mb-2'
 										/>
-										<span className='text-2xl font-bold font-serif mb-1'>
-											{stats.approvedVariants}
+										<span className='text-3xl font-bold font-serif mb-1 text-green-500'>
+											{stats.verifiedVariants}
 										</span>
 										<span className='text-xs font-bold uppercase tracking-widest text-brand-ink/40'>
-											Approved Variants
+											Verified Variants
 										</span>
 									</div>
 								</div>
@@ -265,11 +265,11 @@ export const Admin = () => {
 											size={24}
 											className='text-brand-orange mb-2'
 										/>
-										<span className='text-2xl font-bold font-serif mb-1'>
-											{stats.pendingVariants}
+										<span className='text-3xl font-bold font-serif mb-1 text-brand-orange'>
+											{stats.unverifiedVariants}
 										</span>
 										<span className='text-xs font-bold uppercase tracking-widest text-brand-ink/40'>
-											Pending Variants
+											Unverified Variants
 										</span>
 									</div>
 								</div>
@@ -378,8 +378,8 @@ export const Admin = () => {
 									}}
 								>
 									<option value='all'>All Variants</option>
-									<option value='approved'>Approved</option>
-									<option value='pending'>Pending</option>
+									<option value='verified'>Verified</option>
+									<option value='unverified'>Unverified</option>
 								</select>
 							</div>
 							{loadingVariants ? (

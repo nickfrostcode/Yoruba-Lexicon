@@ -20,7 +20,7 @@ import {
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { Contribution, BaseWord } from "../lib/types";
-import { normalizeWord, getAlphabetChar } from "../lib/utils";
+import { normalizeWord, getAlphabetChar, compareBaseAndVariant } from "../lib/utils";
 import { YORUBA_ALPHABET, PARTS_OF_SPEECH } from "../lib/constants";
 import { YorubaKeyboard } from "../components/YorubaKeyboard";
 
@@ -101,11 +101,13 @@ export const Dashboard: React.FC = () => {
 	};
 
 	const fetchBaseWordsByLetter = async (letter: string) => {
+		if (!user) return;
 		setLoadingBaseWords(true);
 		const { data, error } = await supabase
 			.from("base_words")
 			.select("*")
 			.eq("alphabet", letter)
+			.eq("created_by", user.id)
 			.order("word", { ascending: true });
 
 		if (!error && data) {
@@ -149,7 +151,7 @@ export const Dashboard: React.FC = () => {
 
 		setIsSubmittingBaseWord(true);
 		try {
-			const word = baseWordInput.trim();
+			const word = baseWordInput.trim().toLowerCase();
 			const normalized = normalizeWord(word);
 			const alphabet = getAlphabetChar(word);
 
@@ -159,7 +161,7 @@ export const Dashboard: React.FC = () => {
 					normalized_word: normalized,
 					alphabet,
 					syllables,
-					note: baseWordNote,
+					note: baseWordNote ? baseWordNote.trim().toLowerCase() : null,
 					created_by: user.id,
 				},
 			]);
@@ -192,6 +194,11 @@ export const Dashboard: React.FC = () => {
 			return;
 		}
 
+		if (!compareBaseAndVariant(selectedBaseWord.word, variantForm.word)) {
+			toast.error("The variant must structurally match the selected base word (ignoring tones).");
+			return;
+		}
+
 		setIsSubmittingVariant(true);
 		try {
 			const { error } = await (
@@ -199,14 +206,14 @@ export const Dashboard: React.FC = () => {
 			).insert([
 				{
 					base_word_id: selectedBaseWord.id,
-					word: variantForm.word.trim(),
-					phonetic: variantForm.phonetic,
+					word: variantForm.word.trim().toLowerCase(),
+					phonetic: variantForm.phonetic ? variantForm.phonetic.trim().toLowerCase() : null,
 					part_of_speech: variantForm.part_of_speech,
-					definition: variantForm.definition,
-					example_yoruba: variantForm.example_yoruba,
-					example_english: variantForm.example_english,
+					definition: variantForm.definition.trim().toLowerCase(),
+					example_yoruba: variantForm.example_yoruba ? variantForm.example_yoruba.trim().toLowerCase() : null,
+					example_english: variantForm.example_english ? variantForm.example_english.trim().toLowerCase() : null,
 					contributor_id: user.id,
-					status: "approved", // User request: auto-approve via UI submit
+					status: "unverified",
 				},
 			]);
 			if (error) throw error;
@@ -311,10 +318,10 @@ export const Dashboard: React.FC = () => {
 												className='text-green-500'
 											/>
 										}
-										label='Approved'
+										label='Verified'
 										value={
 											contributions.filter(
-												(c) => c.status === "approved",
+												(c) => c.status === "verified",
 											).length
 										}
 									/>
@@ -327,10 +334,10 @@ export const Dashboard: React.FC = () => {
 												className='text-brand-orange'
 											/>
 										}
-										label='Pending'
+										label='Unverified'
 										value={
 											contributions.filter(
-												(c) => c.status === "pending",
+												(c) => c.status === "unverified",
 											).length
 										}
 									/>
@@ -416,7 +423,7 @@ export const Dashboard: React.FC = () => {
 														<span
 															className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
 																contribution.status ===
-																"approved"
+																"verified"
 																	? "bg-green-100 text-green-600"
 																	: "bg-brand-orange/10 text-brand-orange"
 															}`}
@@ -525,10 +532,11 @@ export const Dashboard: React.FC = () => {
 										className='input-field'
 										placeholder='e.g. Olukọ'
 										value={baseWordInput}
-										onChange={(e) => setBaseWordInput(e.target.value)}
+										onChange={(e) => setBaseWordInput(e.target.value.normalize("NFC"))}
 										required
 									/>
 									<YorubaKeyboard
+										baseMode={true}
 										onCharClick={(char) =>
 											setBaseWordInput((prev) => prev + char)
 										}
@@ -730,7 +738,7 @@ export const Dashboard: React.FC = () => {
 													}
 												/>
 												<p className='text-[10px] text-brand-ink/40 ml-1'>
-													Use 'd' (low), 'r' (high), 'm' (mid).
+													Use 'd' (low), 'r' (mid), 'm' (high).
 												</p>
 											</div>
 

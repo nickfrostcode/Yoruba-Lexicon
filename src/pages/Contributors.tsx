@@ -107,7 +107,7 @@ export const Contributors: React.FC = () => {
 					</h1>
 					<p className='text-brand-ink/60 text-lg'>
 						Meet the people preserving Yorùbá language knowledge.
-						Contributors are ranked by approved lexicon entries and can be
+						Contributors are ranked by verified lexicon entries and can be
 						sorted by contribution or activity.
 					</p>
 				</div>
@@ -198,7 +198,7 @@ export const Contributors: React.FC = () => {
 								<div className='space-y-3'>
 									<div className='flex items-center justify-between text-sm'>
 										<span className='text-brand-ink/50 font-medium'>
-											Approved entries
+											Verified entries
 										</span>
 										<span className='text-2xl font-bold text-brand-orange'>
 											{contributor.totalContributions}
@@ -229,7 +229,7 @@ export const Contributors: React.FC = () => {
 								No contributors yet
 							</h3>
 							<p className='text-brand-ink/60'>
-								Contributor cards will appear here as soon as approved
+								Contributor cards will appear here as soon as verified
 								entries are added.
 							</p>
 						</div>
