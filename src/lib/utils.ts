@@ -2,12 +2,36 @@
 
 import { YORUBA_ALPHABET } from "./constants";
 
+const TONE_MAP: Record<string, string> = {
+    'à': 'a', 'á': 'a', 'â': 'a', 'ǎ': 'a',
+    'è': 'e', 'é': 'e', 'ê': 'e', 'ě': 'e',
+    'ẹ̀': 'ẹ', 'ẹ́': 'ẹ', 'ệ': 'ẹ', 'ẹ̌': 'ẹ',
+    'ì': 'i', 'í': 'i', 'î': 'i', 'ǐ': 'i',
+    'ò': 'o', 'ó': 'o', 'ô': 'o', 'ǒ': 'o',
+    'ọ̀': 'ọ', 'ọ́': 'ọ', 'ộ': 'ọ', 'ọ̌': 'ọ',
+    'ù': 'u', 'ú': 'u', 'û': 'u', 'ǔ': 'u',
+    'ǹ': 'n', 'ń': 'n',
+    'm̀': 'm', 'ḿ': 'm',
+};
+
 export function normalizeWord(word: string): string {
-    // Normalizes a string by converting to lowercase and stripping tone marks (acute \u0301, grave \u0300, macron, etc.)
-    // We EXCLUDE \u0323 (dot below), to keep ẹ, ọ, ṣ intact
-    let nfd = word.normalize("NFD");
-    nfd = nfd.replace(/[\u0300-\u0322\u0324-\u036f]/g, "");
-    return nfd.normalize("NFC").toLowerCase();
+    let lower = word.toLowerCase().trim();
+    // Replace composed characters based on map
+    for (const [mark, plain] of Object.entries(TONE_MAP)) {
+        lower = lower.split(mark).join(plain);
+    }
+    
+    // Also remove generic combining tone marks (grave, acute, etc.)
+    // Be careful NOT to remove the dot below (\u0323) which is used for ẹ, ọ, ṣ!
+    lower = lower.normalize('NFD');
+    lower = lower.replace(/[\u0300-\u0322\u0324-\u036f]/g, '');
+    
+    // Normalize back to NFC for valid composed chars like ẹ, ọ, ṣ
+    return lower.normalize('NFC');
+}
+
+export function compareBaseAndVariant(base: string, variant: string): boolean {
+    return normalizeWord(base) === normalizeWord(variant);
 }
 
 export function getAlphabetChar(word: string): string {

@@ -21,7 +21,7 @@ export interface LexiconEntry {
 	definition: string;
 	example_yoruba: string | null;
 	example_english: string | null;
-	status: "pending" | "approved";
+	status: "unverified" | "verified";
 	created_at: string;
 	contributor_id: string | null;
 	base_word?: BaseWord; // joined data
@@ -44,7 +44,7 @@ export interface Contribution {
 	word: string;
 	phonetic: string;
 	definition: string;
-	status: "pending" | "approved";
+	status: "unverified" | "verified";
 	created_at: string;
 	base_word?: BaseWord; // joined data
 }
@@ -54,4 +54,5 @@ export interface BrowseEntry {
 	word: string;
 	syllables?: number;
 	variant_count: number;
+	has_verified?: boolean;
 }
