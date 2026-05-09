@@ -130,7 +130,8 @@ interface Database {
 					id: string;
 					full_name: string | null;
 					email: string | null;
-					contribution_count: number;
+					total_contribution_count: number;
+					verified_contribution_count: number;
 					last_contribution_at: string | null;
 				}[];
 			};

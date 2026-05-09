@@ -8,7 +8,8 @@ returns table (
   full_name text,
   email text,
   avatar_url text,
-  contribution_count bigint,
+  total_contribution_count bigint,
+  verified_contribution_count bigint,
   last_contribution_at timestamptz
 )
 language sql
@@ -21,14 +22,14 @@ as $$
     p.full_name,
     p.email,
     p.avatar_url,
-    count(le.id)::bigint as contribution_count,
+    count(le.id)::bigint as total_contribution_count,
+    sum((le.status = 'verified')::int)::bigint as verified_contribution_count,
     max(le.created_at) as last_contribution_at
   from public.lexicon_entries le
   inner join public.profiles p on p.id = le.contributor_id
-  where le.status = 'approved'
-    and le.contributor_id is not null
+  where le.contributor_id is not null
   group by p.id, p.full_name, p.email, p.avatar_url
-  order by contribution_count desc;
+  order by verified_contribution_count desc, last_contribution_at desc;
 $$;
 
 revoke all on function public.get_contributors_leaderboard() from public;

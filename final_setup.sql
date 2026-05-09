@@ -66,7 +66,8 @@ RETURNS TABLE (
     id UUID,
     full_name TEXT,
     email TEXT,
-    contribution_count BIGINT,
+    total_contribution_count BIGINT,
+    verified_contribution_count BIGINT,
     last_contribution_at TIMESTAMP WITH TIME ZONE
 ) AS $$
 BEGIN
@@ -75,18 +76,17 @@ BEGIN
         p.id,
         p.full_name,
         p.email,
-        COUNT(l.id)::BIGINT AS contribution_count,
+        COUNT(l.id)::BIGINT AS total_contribution_count,
+        SUM((l.status = 'verified')::INT)::BIGINT AS verified_contribution_count,
         MAX(l.created_at) AS last_contribution_at
     FROM 
         public.profiles p
     JOIN 
         public.lexicon_entries l ON p.id = l.contributor_id
-    WHERE 
-        l.status = 'verified'
     GROUP BY 
         p.id, p.full_name, p.email
     ORDER BY 
-        contribution_count DESC, last_contribution_at DESC;
+        verified_contribution_count DESC, last_contribution_at DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

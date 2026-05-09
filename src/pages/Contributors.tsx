@@ -10,12 +10,15 @@ interface ContributorCardData {
 	fullName: string;
 	email: string;
 	totalContributions: number;
+	verifiedContributions: number;
 	lastContributionAt: string | null;
 }
 
 type SortOption =
-	| "highest"
-	| "lowest"
+	| "highest-verified"
+	| "lowest-verified"
+	| "highest-total"
+	| "lowest-total"
 	| "name-asc"
 	| "name-desc"
 	| "latest-activity";
@@ -23,7 +26,7 @@ type SortOption =
 export const Contributors: React.FC = () => {
 	const [contributors, setContributors] = useState<ContributorCardData[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [sortBy, setSortBy] = useState<SortOption>("highest");
+	const [sortBy, setSortBy] = useState<SortOption>("highest-verified");
 
 	useEffect(() => {
 		fetchContributors();
@@ -36,14 +39,16 @@ export const Contributors: React.FC = () => {
 			id: string;
 			full_name: string | null;
 			email: string | null;
-			contribution_count: number | string;
+			total_contribution_count: number | string;
+			verified_contribution_count: number | string;
 			last_contribution_at: string | null;
 		}): ContributorCardData => ({
 			id: row.id,
 			fullName:
 				row.full_name?.trim() || row.email?.split("@")[0] || "Contributor",
 			email: row.email ?? "",
-			totalContributions: Number(row.contribution_count),
+			totalContributions: Number(row.total_contribution_count),
+			verifiedContributions: Number(row.verified_contribution_count),
 			lastContributionAt: row.last_contribution_at,
 		});
 
@@ -66,11 +71,19 @@ export const Contributors: React.FC = () => {
 		const sorted = [...contributors];
 
 		switch (sortBy) {
-			case "highest":
+			case "highest-verified":
+				return sorted.sort(
+					(a, b) => b.verifiedContributions - a.verifiedContributions,
+				);
+			case "lowest-verified":
+				return sorted.sort(
+					(a, b) => a.verifiedContributions - b.verifiedContributions,
+				);
+			case "highest-total":
 				return sorted.sort(
 					(a, b) => b.totalContributions - a.totalContributions,
 				);
-			case "lowest":
+			case "lowest-total":
 				return sorted.sort(
 					(a, b) => a.totalContributions - b.totalContributions,
 				);
@@ -98,6 +111,11 @@ export const Contributors: React.FC = () => {
 		0,
 	);
 
+	const totalVerifiedContributions = contributors.reduce(
+		(total, contributor) => total + contributor.verifiedContributions,
+		0,
+	);
+
 	return (
 		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
 			<div className='flex flex-col md:flex-row md:items-end justify-between mb-12 space-y-8 md:space-y-0'>
@@ -107,8 +125,8 @@ export const Contributors: React.FC = () => {
 					</h1>
 					<p className='text-brand-ink/60 text-lg'>
 						Meet the people preserving Yorùbá language knowledge.
-						Contributors are ranked by verified lexicon entries and can be
-						sorted by contribution or activity.
+						Contributors are ranked by verified contributions and show
+						both verified and total entries.
 					</p>
 				</div>
 
@@ -124,7 +142,13 @@ export const Contributors: React.FC = () => {
 							</span>
 						</div>
 						<div className='flex items-center justify-between text-sm'>
-							<span className='text-brand-ink/60'>Total Entries</span>
+							<span className='text-brand-ink/60'>Verified entries</span>
+							<span className='font-bold text-lg'>
+								{totalVerifiedContributions}
+							</span>
+						</div>
+						<div className='flex items-center justify-between text-sm'>
+							<span className='text-brand-ink/60'>Total entries</span>
 							<span className='font-bold text-lg'>
 								{totalContributions}
 							</span>
@@ -146,8 +170,10 @@ export const Contributors: React.FC = () => {
 						onChange={(e) => setSortBy(e.target.value as SortOption)}
 						className='input-field py-2! px-3! w-auto! min-w-55'
 					>
-						<option value='highest'>Highest Contribution</option>
-						<option value='lowest'>Lowest Contribution</option>
+						<option value='highest-verified'>Highest Verified</option>
+						<option value='lowest-verified'>Lowest Verified</option>
+						<option value='highest-total'>Highest Total</option>
+						<option value='lowest-total'>Lowest Total</option>
 						<option value='latest-activity'>Latest Activity</option>
 						<option value='name-asc'>Name A-Z</option>
 						<option value='name-desc'>Name Z-A</option>
@@ -175,10 +201,10 @@ export const Contributors: React.FC = () => {
 								transition={{ duration: 0.2, delay: index * 0.02 }}
 								className='glass-card border border-brand-ink/5 rounded-2xl p-6 hover:border-brand-orange/30 hover:shadow-lg transition-all'
 							>
-								<div className='flex items-start justify-between mb-6'>
+								<div className='flex items-start justify-between mb-3'>
 									<div className='flex items-center space-x-4'>
 										<div>
-											<h3 className='text-xl font-serif font-bold leading-tight'>
+											<h3 className='text-xl font-serif font-bold leading-tight truncate max-w-50'>
 												{contributor.fullName}
 											</h3>
 											<p className='text-sm text-brand-ink/50 truncate max-w-45'>
@@ -195,12 +221,20 @@ export const Contributors: React.FC = () => {
 									)}
 								</div>
 
-								<div className='space-y-3'>
+								<div>
 									<div className='flex items-center justify-between text-sm'>
 										<span className='text-brand-ink/50 font-medium'>
 											Verified entries
 										</span>
 										<span className='text-2xl font-bold text-brand-orange'>
+											{contributor.verifiedContributions}
+										</span>
+									</div>
+									<div className='flex items-center justify-between text-sm'>
+										<span className='text-brand-ink/50 font-medium'>
+											Total contributions
+										</span>
+										<span className='text-2xl font-bold text-brand-ink'>
 											{contributor.totalContributions}
 										</span>
 									</div>
