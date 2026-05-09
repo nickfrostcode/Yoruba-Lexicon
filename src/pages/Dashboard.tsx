@@ -56,7 +56,7 @@ export const Dashboard: React.FC = () => {
 	const [isSubmittingBaseWord, setIsSubmittingBaseWord] = useState(false);
 
 	// Variants Flow State
-	const [selectedLetter, setSelectedLetter] = useState("A");
+	const [selectedLetter, setSelectedLetter] = useState("");
 	const [baseWords, setBaseWords] = useState<BaseWord[]>([]);
 	const [loadingBaseWords, setLoadingBaseWords] = useState(false);
 	const [selectedBaseWord, setSelectedBaseWord] = useState<BaseWord | null>(
@@ -107,8 +107,10 @@ export const Dashboard: React.FC = () => {
 		setLoadingContributions(false);
 	};
 
-	const fetchBaseWordsByLetter = async (letter: string) => {
-		if (!user) return;
+   const fetchBaseWordsByLetter = async (letter: string) => {
+      if (selectedLetter === "") return;
+      if (!user) return;
+      if (loadedBaseWordsLetter === letter) return;
 		setLoadingBaseWords(true);
 		const { data, error } = await supabase
 			.from("base_words")
