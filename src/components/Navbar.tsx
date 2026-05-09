@@ -131,7 +131,7 @@ export const Navbar: React.FC = () => {
 									type='button'
 									onClick={() => setIsProfileOpen(!isProfileOpen)}
 									className='flex items-center gap-2.5 pl-2 pr-3 py-2 rounded-xl
-										hover:bg-brand-ink/5 transition-all duration-200 group'
+										hover:bg-brand-ink/5 transition-all duration-200 group cursor-pointer'
 								>
 									{/* Avatar */}
 									<div
