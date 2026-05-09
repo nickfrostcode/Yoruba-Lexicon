@@ -50,6 +50,9 @@ export const Admin = () => {
 	const [variantsFilter, setVariantsFilter] = useState<
 		"all" | "verified" | "unverified"
 	>("all");
+	const [variantsSortBy, setVariantsSortBy] = useState<
+		"date-down" | "date-up" | "a-z" | "z-a"
+	>("date-down");
 
 	const [visibleBaseWords, setVisibleBaseWords] = useState(LOAD_MORE_COUNT);
 	const [visibleVariants, setVisibleVariants] = useState(LOAD_MORE_COUNT);
@@ -176,6 +179,39 @@ export const Admin = () => {
 		}
 		setBaseWords((curr) => curr.filter((b) => b.id !== id));
 		toast.success("Base Word deleted");
+	};
+
+	const getSortedAndFilteredVariants = () => {
+		let filtered = variants.filter((entry) =>
+			variantsFilter === "all" ? true : entry.status === variantsFilter,
+		);
+
+		const sorted = [...filtered].sort((a, b) => {
+			switch (variantsSortBy) {
+				case "date-up":
+					return (
+						new Date(a.created_at).getTime() -
+						new Date(b.created_at).getTime()
+					);
+				case "date-down":
+					return (
+						new Date(b.created_at).getTime() -
+						new Date(a.created_at).getTime()
+					);
+				case "a-z":
+					return (a.base_word?.word || "").localeCompare(
+						b.base_word?.word || "",
+					);
+				case "z-a":
+					return (b.base_word?.word || "").localeCompare(
+						a.base_word?.word || "",
+					);
+				default:
+					return 0;
+			}
+		});
+
+		return sorted;
 	};
 
 	return (
@@ -389,35 +425,46 @@ export const Admin = () => {
 							initial={{ opacity: 0, y: 10 }}
 							animate={{ opacity: 1, y: 0 }}
 						>
-							<div className='flex justify-between items-center mb-6'>
+							<div className='flex justify-between items-center mb-6 flex-wrap gap-4'>
 								<h2 className='text-3xl font-serif font-bold'>
 									Manage Variants
 								</h2>
-								<select
-									className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
-									style={{ width: "auto" }}
-									value={variantsFilter}
-									onChange={(e) => {
-										setVariantsFilter(e.target.value as any);
-										setVisibleVariants(LOAD_MORE_COUNT); // Reset pagination on filter change
-									}}
-								>
-									<option value='all'>All Variants</option>
-									<option value='verified'>Verified</option>
-									<option value='unverified'>Unverified</option>
-								</select>
+								<div className='flex gap-3'>
+									<select
+										className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
+										style={{ width: "auto" }}
+										value={variantsFilter}
+										onChange={(e) => {
+											setVariantsFilter(e.target.value as any);
+											setVisibleVariants(LOAD_MORE_COUNT);
+										}}
+									>
+										<option value='all'>All Variants</option>
+										<option value='verified'>Verified</option>
+										<option value='unverified'>Unverified</option>
+									</select>
+									<select
+										className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
+										style={{ width: "auto" }}
+										value={variantsSortBy}
+										onChange={(e) => {
+											setVariantsSortBy(e.target.value as any);
+											setVisibleVariants(LOAD_MORE_COUNT);
+										}}
+									>
+										<option value='date-down'>Newest First</option>
+										<option value='date-up'>Oldest First</option>
+										<option value='a-z'>A - Z</option>
+										<option value='z-a'>Z - A</option>
+									</select>
+								</div>
 							</div>
 							{loadingVariants ? (
 								<Loader text='Loading variants...' />
 							) : (
 								<div className='flex flex-col'>
 									<div className='grid grid-cols-1 xl:grid-cols-2 gap-6'>
-										{variants
-											.filter((entry) =>
-												variantsFilter === "all"
-													? true
-													: entry.status === variantsFilter,
-											)
+										{getSortedAndFilteredVariants()
 											.slice(0, visibleVariants)
 											.map((entry) => (
 												<motion.div
@@ -440,11 +487,7 @@ export const Admin = () => {
 											))}
 									</div>
 									{visibleVariants <
-										variants.filter((entry) =>
-											variantsFilter === "all"
-												? true
-												: entry.status === variantsFilter,
-										).length && (
+										getSortedAndFilteredVariants().length && (
 										<button
 											onClick={() =>
 												setVisibleVariants(
