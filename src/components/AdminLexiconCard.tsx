@@ -42,7 +42,7 @@ export const AdminLexiconCard: React.FC<AdminLexiconCardProps> = ({
 						</span>
 						<span
 							className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-								entry.status === "approved"
+								entry.status === "verified"
 									? "bg-green-100 text-green-600"
 									: "bg-brand-orange/10 text-brand-orange"
 							}`}
@@ -56,12 +56,12 @@ export const AdminLexiconCard: React.FC<AdminLexiconCardProps> = ({
 					className='flex items-center gap-1 shrink-0'
 					onClick={(e) => e.stopPropagation()}
 				>
-					{entry.status === "pending" && (
+					{entry.status === "unverified" && (
 						<button
 							type='button'
 							onClick={() => onApprove(entry.id)}
 							className='p-2 rounded-xl bg-green-500 text-white hover:bg-green-600 transition-colors'
-							title='Approve'
+							title='Verify'
 						>
 							<CheckCircle size={18} />
 						</button>

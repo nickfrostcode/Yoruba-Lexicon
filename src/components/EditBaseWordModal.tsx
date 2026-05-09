@@ -8,6 +8,8 @@ import { Loader2, Save } from "lucide-react";
 import { Loader } from "../components/Loader";
 import { normalizeWord, getAlphabetChar } from "../lib/utils";
 
+import { YorubaKeyboard } from "../components/YorubaKeyboard";
+
 type BaseWordRow = {
 	word: string;
 	syllables: number | null;
@@ -62,7 +64,7 @@ export const EditBaseWordModal: React.FC<EditBaseWordModalProps> = ({
 		event.preventDefault();
 		if (!id) return;
 
-		const wordTrimmed = word.trim();
+		const wordTrimmed = word.trim().toLowerCase();
 		if (!wordTrimmed) {
 			toast.error("Word cannot be empty");
 			return;
@@ -84,7 +86,7 @@ export const EditBaseWordModal: React.FC<EditBaseWordModalProps> = ({
 				normalized_word: normalized,
 				alphabet: alphabet,
 				syllables: sylCount,
-				note: note,
+				note: note ? note.trim().toLowerCase() : null,
 			})
 			.eq("id", id);
 
@@ -116,8 +118,12 @@ export const EditBaseWordModal: React.FC<EditBaseWordModalProps> = ({
 								type='text'
 								className='input-field'
 								value={word}
-								onChange={(e) => setWord(e.target.value)}
+								onChange={(e) => setWord(e.target.value.normalize("NFC"))}
 								required
+							/>
+							<YorubaKeyboard
+								baseMode={true}
+								onCharClick={(char) => setWord((prev) => prev + char)}
 							/>
 						</div>
 

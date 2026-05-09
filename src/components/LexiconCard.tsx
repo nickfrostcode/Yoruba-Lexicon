@@ -15,9 +15,11 @@ export const LexiconCard: React.FC<LexiconCardProps> = ({ entry }) => {
 		>
 			<div className='flex justify-between items-start mb-4'>
 				<div>
-					<h3 className='text-3xl font-serif font-bold text-brand-ink group-hover:text-brand-orange transition-colors'>
-						{entry.word}
-					</h3>
+					<div className="flex items-center gap-3">
+						<h3 className='text-3xl font-serif font-bold text-brand-ink group-hover:text-brand-orange transition-colors'>
+							{entry.word}
+						</h3>
+					</div>
 					<div className='flex items-center space-x-3 mt-2 text-brand-ink/50'>
                         <Layers size={16} />
 						<span className='text-xs font-bold uppercase tracking-widest'>

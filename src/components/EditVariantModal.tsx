@@ -31,6 +31,7 @@ export const EditVariantModal: React.FC<EditVariantModalProps> = ({
 }) => {
 	const [loading, setLoading] = useState(false);
 	const [entry, setEntry] = useState<LexiconEntryForm | null>(null);
+	const [baseWord, setBaseWord] = useState<string>("");
 
 	useEffect(() => {
 		if (id) fetchEntry();
@@ -43,7 +44,7 @@ export const EditVariantModal: React.FC<EditVariantModalProps> = ({
 			.select("*, base_word:base_words(id, word)")
 			.eq("id", id)
 			.single()) as {
-			data: LexiconEntryRow | null;
+			data: LexiconEntryRow & { base_word: { word: string } } | null;
 			error: unknown;
 		};
 
@@ -60,6 +61,7 @@ export const EditVariantModal: React.FC<EditVariantModalProps> = ({
 				example_yoruba: data.example_yoruba || "",
 				example_english: data.example_english || "",
 			});
+			setBaseWord(data.base_word?.word || "");
 		}
 		setLoading(false);
 	};
@@ -68,14 +70,20 @@ export const EditVariantModal: React.FC<EditVariantModalProps> = ({
 		event.preventDefault();
 		if (!entry || !id) return;
 
+		const { compareBaseAndVariant } = await import("../lib/utils");
+		if (baseWord && !compareBaseAndVariant(baseWord, entry.word)) {
+			toast.error("The variant must structurally match the selected base word (ignoring tones).");
+			return;
+		}
+
 		const { error } = await (supabase.from("lexicon_entries") as any)
 			.update({
-				word: entry.word.trim(),
-				phonetic: entry.phonetic,
+				word: entry.word.trim().toLowerCase(),
+				phonetic: entry.phonetic ? entry.phonetic.trim().toLowerCase() : null,
 				part_of_speech: entry.part_of_speech,
-				definition: entry.definition,
-				example_yoruba: entry.example_yoruba,
-				example_english: entry.example_english,
+				definition: entry.definition.trim().toLowerCase(),
+				example_yoruba: entry.example_yoruba ? entry.example_yoruba.trim().toLowerCase() : null,
+				example_english: entry.example_english ? entry.example_english.trim().toLowerCase() : null,
 			})
 			.eq("id", id);
 

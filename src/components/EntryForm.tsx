@@ -42,7 +42,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({
 						className='input-field'
 						placeholder='e.g. Olùkọ́'
 						value={entry.word}
-						onChange={(e) => updateField("word", e.target.value)}
+						onChange={(e) => updateField("word", e.target.value.normalize("NFC"))}
 						required
 					/>
 				</div>
@@ -56,7 +56,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({
 						className='input-field py-3'
 						placeholder='Provide a clear definition in English...'
 						value={entry.definition}
-						onChange={(e) => updateField("definition", e.target.value)}
+						onChange={(e) => updateField("definition", e.target.value.normalize("NFC"))}
 						required
 					/>
 				</div>
@@ -90,7 +90,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({
 						className='input-field'
 						placeholder='e.g. m-d-r'
 						value={entry.phonetic}
-						onChange={(e) => updateField("phonetic", e.target.value)}
+						onChange={(e) => updateField("phonetic", e.target.value.normalize("NFC"))}
 					/>
 				</div>
 
@@ -104,7 +104,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({
 						placeholder='e.g. Òlùkọ̀ mi dùn'
 						value={entry.example_yoruba}
 						onChange={(e) =>
-							updateField("example_yoruba", e.target.value)
+							updateField("example_yoruba", e.target.value.normalize("NFC"))
 						}
 					/>
 				</div>
@@ -119,7 +119,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({
 						placeholder='e.g. My teacher is nice'
 						value={entry.example_english}
 						onChange={(e) =>
-							updateField("example_english", e.target.value)
+							updateField("example_english", e.target.value.normalize("NFC"))
 						}
 					/>
 				</div>

@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import { Info, Keyboard } from "lucide-react";
 
-const YORUBA_CHARS = ["à", "á", "è", "é", "ẹ", "ẹ̀", "ẹ́", "ì", "í", "ò", "ó", "ọ", "ọ̀", "ọ́", "ù", "ú", "ṣ"];
+const ALL_YORUBA_CHARS = ["à", "á", "è", "é", "ẹ", "ẹ̀", "ẹ́", "ì", "í", "ò", "ó", "ọ", "ọ̀", "ọ́", "ù", "ú", "ṣ"];
+const BASE_YORUBA_CHARS = ["ẹ", "ọ", "ṣ"];
 
 interface YorubaKeyboardProps {
 	onCharClick: (char: string) => void;
+	baseMode?: boolean;
 }
 
-export const YorubaKeyboard: React.FC<YorubaKeyboardProps> = ({ onCharClick }) => {
+export const YorubaKeyboard: React.FC<YorubaKeyboardProps> = ({ onCharClick, baseMode = false }) => {
 	const [isOpen, setIsOpen] = useState(false);
+	const charsToShow = baseMode ? BASE_YORUBA_CHARS : ALL_YORUBA_CHARS;
 
 	return (
 		<div className="mt-2 text-left">
@@ -27,7 +30,7 @@ export const YorubaKeyboard: React.FC<YorubaKeyboardProps> = ({ onCharClick }) =
                         <span className="text-xs font-medium text-brand-orange/80">Click a character to insert</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {YORUBA_CHARS.map((char) => (
+                        {charsToShow.map((char) => (
                             <button
                                 key={char}
                                 type="button"

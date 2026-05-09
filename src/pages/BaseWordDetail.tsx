@@ -45,12 +45,11 @@ export const BaseWordDetail: React.FC = () => {
 
 		setBaseWord(bData);
 
-		// Fetch Approved Variants for this base word
+		// Fetch Variants for this base word
 		const { data: vData, error: vError } = await supabase
 			.from("lexicon_entries")
 			.select("*, profiles!lexicon_entries_contributor_id_fkey(full_name)")
 			.eq("base_word_id", id ?? "")
-			.eq("status", "approved")
 			.order("created_at", { ascending: false });
 
 		if (!vError && vData) {
@@ -132,7 +131,7 @@ export const BaseWordDetail: React.FC = () => {
 					) : (
 						<div className='text-center py-16 bg-white/30 rounded-3xl border-2 border-dashed border-brand-ink/5'>
 							<p className='text-brand-ink/50 text-lg'>
-								No approved variants found for this word.
+								No variants found for this word.
 							</p>
 						</div>
 					)}
