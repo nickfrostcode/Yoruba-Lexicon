@@ -60,5 +60,5 @@ export interface BrowseEntry {
 	word: string;
 	syllables?: number;
 	variant_count: number;
-	has_verified?: boolean;
+	has_verified: boolean;
 }

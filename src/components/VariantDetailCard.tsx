@@ -36,7 +36,7 @@ export const VariantDetailCard: React.FC<VariantDetailCardProps> = ({
 
 	return (
 		<div
-			className={`relative glass-card p-6 rounded-2xl transition-all duration-300 cursor-row-resize group hover:border-brand-orange/30 flex flex-col ${
+			className={`relative glass-card p-6 rounded-2xl transition-all duration-300 cursor-pointer group hover:border-brand-orange/30 flex flex-col ${
 				isExpanded
 					? "ring-2 ring-brand-orange/20 shadow-2xl"
 					: "hover:shadow-lg"

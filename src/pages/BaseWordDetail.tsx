@@ -17,6 +17,13 @@ export const BaseWordDetail: React.FC = () => {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
+		// Save scroll position when leaving this page
+		return () => {
+			sessionStorage.setItem("browseScrollY", window.scrollY.toString());
+		};
+	}, []);
+
+	useEffect(() => {
 		if (id) {
 			fetchWordDetails();
 		}

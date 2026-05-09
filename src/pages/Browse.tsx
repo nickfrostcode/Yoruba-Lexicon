@@ -1,6 +1,6 @@
 /** @format */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "motion/react";
 import { PageHeader } from "../components/PageHeader";
@@ -18,14 +18,62 @@ export const Browse: React.FC = () => {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedLetter, setSelectedLetter] = useState<string>("all");
 	const [currentPage, setCurrentPage] = useState(1);
+	const [baseWordFilter, setBaseWordFilter] = useState<
+		"all" | "verified" | "multiple"
+	>("all");
+	const [isRestored, setIsRestored] = useState(false);
+	const isInitialRender = useRef(true);
 
 	useEffect(() => {
-		fetchEntries();
-	}, [selectedLetter]);
+		// Restore state from sessionStorage on mount
+		const savedSearchTerm = sessionStorage.getItem("browseSearchTerm");
+		const savedLetter = sessionStorage.getItem("browseSelectedLetter");
+		const savedPage = sessionStorage.getItem("browseCurrentPage");
+		const savedFilter = sessionStorage.getItem("browseBaseWordFilter");
+
+		if (savedSearchTerm) setSearchTerm(savedSearchTerm);
+		if (savedLetter) setSelectedLetter(savedLetter);
+		if (savedPage) setCurrentPage(parseInt(savedPage));
+		if (savedFilter)
+			setBaseWordFilter(savedFilter as "all" | "verified" | "multiple");
+
+		// Mark restoration as complete
+		setIsRestored(true);
+
+		const savedScrollY = sessionStorage.getItem("browseScrollY");
+		if (savedScrollY) {
+			setTimeout(() => {
+				window.scrollTo(0, parseInt(savedScrollY));
+			}, 100);
+		}
+	}, []);
 
 	useEffect(() => {
+		if (!isRestored) return;
+
+		// Save state to sessionStorage whenever it changes
+		sessionStorage.setItem("browseSearchTerm", searchTerm);
+		sessionStorage.setItem("browseSelectedLetter", selectedLetter);
+		sessionStorage.setItem("browseCurrentPage", currentPage.toString());
+		sessionStorage.setItem("browseBaseWordFilter", baseWordFilter);
+	}, [isRestored, searchTerm, selectedLetter, currentPage, baseWordFilter]);
+
+	useEffect(() => {
+		// Only fetch if we've restored state
+		if (isRestored) {
+			fetchEntries();
+		}
+	}, [isRestored, selectedLetter, baseWordFilter]);
+
+	useEffect(() => {
+		if (!isRestored) return;
+		if (isInitialRender.current) {
+			isInitialRender.current = false;
+			return;
+		}
+
 		setCurrentPage(1);
-	}, [searchTerm, selectedLetter]);
+	}, [isRestored, searchTerm, selectedLetter, baseWordFilter]);
 
 	const fetchEntries = async () => {
 		setLoading(true);
@@ -72,9 +120,25 @@ export const Browse: React.FC = () => {
 		setLoading(false);
 	};
 
-	const filteredEntries = entries.filter((entry) =>
-		entry.word.toLowerCase().includes(searchTerm.toLowerCase()),
-	);
+	const filteredEntries = entries.filter((entry) => {
+		const matchesSearch = entry.word
+			.toLowerCase()
+			.includes(searchTerm.toLowerCase());
+		let matchesFilter = true;
+
+		switch (baseWordFilter) {
+			case "verified":
+				matchesFilter = entry.has_verified;
+				break;
+			case "multiple":
+				matchesFilter = entry.variant_count > 1;
+				break;
+			default:
+				matchesFilter = true;
+		}
+
+		return matchesSearch && matchesFilter;
+	});
 
 	const totalPages = Math.ceil(filteredEntries.length / ITEMS_PER_PAGE);
 	const paginatedEntries = filteredEntries.slice(
@@ -84,6 +148,8 @@ export const Browse: React.FC = () => {
 
 	const handlePageChange = (page: number) => {
 		setCurrentPage(page);
+		// Save scroll position
+		sessionStorage.setItem("browseScrollY", "0");
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	};
 
@@ -97,7 +163,10 @@ export const Browse: React.FC = () => {
 				searchPlaceholder='Search for a word...'
 			/>
 
-			<div className='mb-12'>
+			<div className='mb-8'>
+				<h3 className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 mb-3'>
+					Filter by Letter
+				</h3>
 				<FilterPills
 					items={[
 						{ key: "all", label: "All" },
@@ -111,12 +180,30 @@ export const Browse: React.FC = () => {
 				/>
 			</div>
 
+			<div className='mb-12'>
+				<h3 className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 mb-3'>
+					Filter by Base Word
+				</h3>
+				<FilterPills
+					items={[
+						{ key: "all", label: "All Words" },
+						{ key: "verified", label: "Has Verified Variants" },
+						{ key: "multiple", label: "Multiple Variants" },
+					]}
+					value={baseWordFilter}
+					onChange={(value) => setBaseWordFilter(value as any)}
+				/>
+			</div>
+
 			{!loading && filteredEntries.length > 0 && (
-				<div className='mb-6 flex items-center justify-between'>
+				<div className='mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2'>
 					<p className='text-sm text-brand-ink/40 font-medium'>
 						Showing{" "}
 						<span className='text-brand-ink/70 font-bold'>
-							{(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+							{filteredEntries.length > 0
+								? (currentPage - 1) * ITEMS_PER_PAGE + 1
+								: 0}
+							–
 							{Math.min(
 								currentPage * ITEMS_PER_PAGE,
 								filteredEntries.length,
