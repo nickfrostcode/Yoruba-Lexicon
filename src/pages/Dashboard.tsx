@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
-import { Contribution, BaseWord } from "../lib/types";
+import { Contribution, BaseWord, LexiconEntry } from "../lib/types";
 import {
 	normalizeWord,
 	getAlphabetChar,
@@ -66,6 +66,10 @@ export const Dashboard: React.FC = () => {
 		string | null
 	>(null);
 
+	const [existingVariants, setExistingVariants] = useState<LexiconEntry[]>([]);
+	const [loadingExistingVariants, setLoadingExistingVariants] =
+		useState(false);
+
 	const [variantForm, setVariantForm] = useState({
 		word: "",
 		phonetic: "",
@@ -89,6 +93,12 @@ export const Dashboard: React.FC = () => {
 		}
 	}, [selectedLetter, activeTab, selectedBaseWord, loadedBaseWordsLetter]);
 
+	useEffect(() => {
+		if (selectedBaseWord) {
+			fetchExistingVariants(selectedBaseWord.id);
+		}
+	}, [selectedBaseWord]);
+
 	const fetchContributions = async (userId: string) => {
 		setLoadingContributions(true);
 		const { data, error } = await (supabase.from("lexicon_entries") as any)
@@ -107,10 +117,10 @@ export const Dashboard: React.FC = () => {
 		setLoadingContributions(false);
 	};
 
-   const fetchBaseWordsByLetter = async (letter: string) => {
-      if (selectedLetter === "") return;
-      if (!user) return;
-      if (loadedBaseWordsLetter === letter) return;
+	const fetchBaseWordsByLetter = async (letter: string) => {
+		if (selectedLetter === "") return;
+		if (!user) return;
+		if (loadedBaseWordsLetter === letter) return;
 		setLoadingBaseWords(true);
 		const { data, error } = await supabase
 			.from("base_words")
@@ -124,6 +134,20 @@ export const Dashboard: React.FC = () => {
 			setLoadedBaseWordsLetter(letter);
 		}
 		setLoadingBaseWords(false);
+	};
+
+	const fetchExistingVariants = async (baseWordId: string) => {
+		setLoadingExistingVariants(true);
+		const { data, error } = await supabase
+			.from("lexicon_entries")
+			.select("id, word, status")
+			.eq("base_word_id", baseWordId)
+			.order("word", { ascending: true });
+
+		if (!error && data) {
+			setExistingVariants(data);
+		}
+		setLoadingExistingVariants(false);
 	};
 
 	const handleLoadMore = async () => {
@@ -245,6 +269,7 @@ export const Dashboard: React.FC = () => {
 				example_english: "",
 			});
 			setSelectedBaseWord(null);
+			setExistingVariants([]);
 			fetchContributions(user.id);
 		} catch (err: any) {
 			toast.error(err.message || "Error submitting variant.");
@@ -636,9 +661,9 @@ export const Dashboard: React.FC = () => {
 								</div>
 							) : (
 								<div className='glass-card p-8 rounded-3xl border border-brand-ink/5'>
-									<div className='flex items-center justify-between mb-8 pb-4 border-b border-brand-ink/5'>
+									<div className='flex items-center justify-between mb-4 pb-4 border-b border-brand-ink/5'>
 										<div>
-											<h2 className='text-3xl font-serif font-bold mb-1'>
+											<h2 className='text-3xl font-serif font-bold'>
 												Add Variant
 											</h2>
 											<p className='text-brand-ink/60'>
@@ -649,12 +674,59 @@ export const Dashboard: React.FC = () => {
 											</p>
 										</div>
 										<button
-											onClick={() => setSelectedBaseWord(null)}
+											onClick={() => {
+												setSelectedBaseWord(null);
+												setExistingVariants([]);
+											}}
 											className='text-sm font-bold uppercase tracking-widest text-brand-ink/40 hover:text-brand-orange transition-colors'
 										>
 											Change
 										</button>
 									</div>
+
+									{loadingExistingVariants ? (
+										<div className='mb-6'>
+											<div className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 mb-2'>
+												Loading existing variants...
+											</div>
+										</div>
+									) : existingVariants.length > 0 ? (
+										<div className='mb-6'>
+											<div className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 mb-2'>
+												Existing Variants ({existingVariants.length}
+												)
+											</div>
+											<div className='flex flex-wrap gap-2'>
+												{existingVariants.map((variant) => (
+													<div
+														key={variant.id}
+														className={`px-3 py-1 rounded-full text-xs font-medium ${
+															variant.status === "verified"
+																? "bg-green-100 text-green-700 border border-green-200"
+																: "bg-brand-orange/10 text-brand-orange border border-brand-orange/20"
+														}`}
+													>
+														{variant.word}
+														{variant.status === "verified" && (
+															<span className='ml-1 text-green-600'>
+																✓
+															</span>
+														)}
+													</div>
+												))}
+											</div>
+										</div>
+									) : (
+										<div className='mb-6'>
+											<div className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 mb-2'>
+												Existing Variants (0)
+											</div>
+											<p className='text-sm text-brand-ink/60'>
+												No variants exist for this base word yet. Be
+												the first to add one!
+											</p>
+										</div>
+									)}
 
 									<div className='bg-brand-orange/10 p-4 rounded-xl border border-brand-orange/20 mb-8'>
 										<h4 className='font-bold text-brand-orange mb-2 uppercase tracking-widest text-xs'>
