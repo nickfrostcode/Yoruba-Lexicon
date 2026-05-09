@@ -20,7 +20,11 @@ import {
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { Contribution, BaseWord } from "../lib/types";
-import { normalizeWord, getAlphabetChar, compareBaseAndVariant } from "../lib/utils";
+import {
+	normalizeWord,
+	getAlphabetChar,
+	compareBaseAndVariant,
+} from "../lib/utils";
 import { YORUBA_ALPHABET, PARTS_OF_SPEECH } from "../lib/constants";
 import { YorubaKeyboard } from "../components/YorubaKeyboard";
 
@@ -59,6 +63,9 @@ export const Dashboard: React.FC = () => {
 	const [selectedBaseWord, setSelectedBaseWord] = useState<BaseWord | null>(
 		null,
 	);
+	const [loadedBaseWordsLetter, setLoadedBaseWordsLetter] = useState<
+		string | null
+	>(null);
 
 	const [variantForm, setVariantForm] = useState({
 		word: "",
@@ -77,10 +84,11 @@ export const Dashboard: React.FC = () => {
 	}, [user]);
 
 	useEffect(() => {
-		if (activeTab === "variants" && !selectedBaseWord) {
+		if (activeTab !== "variants" || selectedBaseWord) return;
+		if (loadedBaseWordsLetter !== selectedLetter) {
 			fetchBaseWordsByLetter(selectedLetter);
 		}
-	}, [selectedLetter, activeTab, selectedBaseWord]);
+	}, [selectedLetter, activeTab, selectedBaseWord, loadedBaseWordsLetter]);
 
 	const fetchContributions = async (userId: string) => {
 		setLoadingContributions(true);
@@ -112,6 +120,7 @@ export const Dashboard: React.FC = () => {
 
 		if (!error && data) {
 			setBaseWords(data);
+			setLoadedBaseWordsLetter(letter);
 		}
 		setLoadingBaseWords(false);
 	};
@@ -195,7 +204,9 @@ export const Dashboard: React.FC = () => {
 		}
 
 		if (!compareBaseAndVariant(selectedBaseWord.word, variantForm.word)) {
-			toast.error("The variant must structurally match the selected base word (ignoring tones).");
+			toast.error(
+				"The variant must structurally match the selected base word (ignoring tones).",
+			);
 			return;
 		}
 
@@ -207,11 +218,17 @@ export const Dashboard: React.FC = () => {
 				{
 					base_word_id: selectedBaseWord.id,
 					word: variantForm.word.trim().toLowerCase(),
-					phonetic: variantForm.phonetic ? variantForm.phonetic.trim().toLowerCase() : null,
+					phonetic: variantForm.phonetic
+						? variantForm.phonetic.trim().toLowerCase()
+						: null,
 					part_of_speech: variantForm.part_of_speech,
 					definition: variantForm.definition.trim().toLowerCase(),
-					example_yoruba: variantForm.example_yoruba ? variantForm.example_yoruba.trim().toLowerCase() : null,
-					example_english: variantForm.example_english ? variantForm.example_english.trim().toLowerCase() : null,
+					example_yoruba: variantForm.example_yoruba
+						? variantForm.example_yoruba.trim().toLowerCase()
+						: null,
+					example_english: variantForm.example_english
+						? variantForm.example_english.trim().toLowerCase()
+						: null,
 					contributor_id: user.id,
 					status: "unverified",
 				},
@@ -532,7 +549,11 @@ export const Dashboard: React.FC = () => {
 										className='input-field'
 										placeholder='e.g. Olukọ'
 										value={baseWordInput}
-										onChange={(e) => setBaseWordInput(e.target.value.normalize("NFC"))}
+										onChange={(e) =>
+											setBaseWordInput(
+												e.target.value.normalize("NFC"),
+											)
+										}
 										required
 									/>
 									<YorubaKeyboard

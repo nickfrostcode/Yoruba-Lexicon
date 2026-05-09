@@ -53,12 +53,15 @@ export const Admin = () => {
 
 	const [visibleBaseWords, setVisibleBaseWords] = useState(LOAD_MORE_COUNT);
 	const [visibleVariants, setVisibleVariants] = useState(LOAD_MORE_COUNT);
+	const [statsLoaded, setStatsLoaded] = useState(false);
+	const [baseWordsLoaded, setBaseWordsLoaded] = useState(false);
+	const [variantsLoaded, setVariantsLoaded] = useState(false);
 
 	useEffect(() => {
-		if (activeTab === "overview") fetchStats();
-		if (activeTab === "base-words") fetchBaseWords();
-		if (activeTab === "variants") fetchVariants();
-	}, [activeTab]);
+		if (activeTab === "overview" && !statsLoaded) fetchStats();
+		if (activeTab === "base-words" && !baseWordsLoaded) fetchBaseWords();
+		if (activeTab === "variants" && !variantsLoaded) fetchVariants();
+	}, [activeTab, statsLoaded, baseWordsLoaded, variantsLoaded]);
 
 	const fetchStats = async () => {
 		const [{ count: bwCount }, { count: vCount, data: variantsData }] =
@@ -84,6 +87,7 @@ export const Admin = () => {
 			unverifiedVariants: unverified,
 			verifiedVariants: verified,
 		});
+		setStatsLoaded(true);
 	};
 
 	const fetchBaseWords = async () => {
@@ -95,6 +99,7 @@ export const Admin = () => {
 		if (!error && data) {
 			setBaseWords(data);
 			setVisibleBaseWords(LOAD_MORE_COUNT);
+			setBaseWordsLoaded(true);
 		}
 		setLoadingBaseWords(false);
 	};
@@ -108,6 +113,7 @@ export const Admin = () => {
 		if (!error && data) {
 			setVariants(data);
 			setVisibleVariants(LOAD_MORE_COUNT);
+			setVariantsLoaded(true);
 		}
 		setLoadingVariants(false);
 	};

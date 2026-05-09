@@ -163,6 +163,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 	const hydrateFromSession = useCallback(
 		(nextSession: Session | null) => {
 			const sbUser = nextSession?.user ?? null;
+			const currentUserId = activeUserIdRef.current;
 			activeUserIdRef.current = sbUser?.id ?? null;
 
 			if (!sbUser) {
@@ -176,15 +177,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 			}
 
 			if (!mountedRef.current) return;
-			setSession(nextSession);
-			setUser(authUserFromJwt(sbUser));
+
+			const nextUser = authUserFromJwt(sbUser);
+			const isSameUser = currentUserId === sbUser.id && profileLoaded;
+
+			setSession((prev) =>
+				prev?.access_token === nextSession?.access_token
+					? prev
+					: nextSession,
+			);
+			setUser((prev) =>
+				prev?.id === nextUser.id &&
+				prev?.email === nextUser.email &&
+				prev?.full_name === nextUser.full_name
+					? prev
+					: nextUser,
+			);
+
+			if (isSameUser) {
+				// Same authenticated user and profile already loaded.
+				return;
+			}
+
 			setIsAdmin(false);
 			setProfileLoaded(false);
 
 			const userId = sbUser.id;
 			DEFER(() => fetchProfileDeferred(userId, sbUser));
 		},
-		[fetchProfileDeferred],
+		[fetchProfileDeferred, profileLoaded],
 	);
 
 	useEffect(() => {
