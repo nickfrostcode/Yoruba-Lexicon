@@ -94,7 +94,7 @@ export const Admin = () => {
 		setLoadingBaseWords(true);
 		const { data, error } = await supabase
 			.from("base_words")
-			.select("*")
+			.select("*, profiles!base_words_created_by_fkey(full_name)")
 			.order("word", { ascending: true });
 		if (!error && data) {
 			setBaseWords(data);
@@ -325,10 +325,13 @@ export const Admin = () => {
 													>
 														<div>
 															<span className='font-serif font-bold text-lg'>
-																{bw.word}
-															</span>{" "}
-															<span className='text-sm text-brand-ink/40'>
-																({bw.syllables} syllables)
+																{bw.word} &ensp;
+															</span>
+															<span className='text-sm text-brand-ink/40 truncate max-w-50'>
+																{bw.profiles?.full_name
+																	? `${bw.syllables ?? "N/A"} syllables •
+                                                   by ${bw.profiles.full_name}`
+																	: `${bw.syllables ?? "N/A"} syllables`}
 															</span>
 															{bw.note && (
 																<p className='text-xs text-brand-ink/40 line-clamp-1'>

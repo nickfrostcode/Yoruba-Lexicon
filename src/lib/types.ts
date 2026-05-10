@@ -10,6 +10,7 @@ export interface BaseWord {
 	created_by: string | null;
 	created_at: string;
 	variant_count?: number;
+	profiles?: { full_name: string };
 }
 
 export interface LexiconEntry {
@@ -17,8 +18,8 @@ export interface LexiconEntry {
 	base_word_id: string;
 	word: string;
 	phonetic: string | null;
-   part_of_speech: string | null;
-   syllables: number | null;
+	part_of_speech: string | null;
+	syllables: number | null;
 	definition: string;
 	example_yoruba: string | null;
 	example_english: string | null;
