@@ -132,6 +132,20 @@ export const Admin = () => {
 		toast.success("Entry verified");
 	};
 
+	const handleUnverify = async (id: string) => {
+		const { error } = await (supabase.from("lexicon_entries") as any)
+			.update({ status: "unverified" })
+			.eq("id", id);
+		if (error) {
+			toast.error("Error unverifying entry");
+			return;
+		}
+		setVariants((curr) =>
+			curr.map((v) => (v.id === id ? { ...v, status: "unverified" } : v)),
+		);
+		toast.success("Entry unverified");
+	};
+
 	const handleDeleteVariant = async (id: string) => {
 		if (!confirm("Are you sure you want to delete this variant?")) return;
 		const { error } = await supabase
@@ -405,6 +419,7 @@ export const Admin = () => {
 													key={entry.id}
 													entry={entry}
 													onApprove={handleApprove}
+													onUnverify={handleUnverify}
 													onEdit={() =>
 														setEditingVariantId(entry.id)
 													}
