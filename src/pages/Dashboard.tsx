@@ -8,8 +8,6 @@ import {
 	Clock,
 	CheckCircle,
 	AlertCircle,
-	Trash2,
-	Edit3,
 	ChevronDown,
 	LayoutDashboard,
 	BookA,
@@ -27,6 +25,7 @@ import {
 } from "../lib/utils";
 import { YORUBA_ALPHABET, PARTS_OF_SPEECH } from "../lib/constants";
 import { YorubaKeyboard } from "../components/YorubaKeyboard";
+import { ContributionCard } from "../components/ContributionCard";
 
 import { EditVariantModal } from "../components/EditVariantModal";
 import { Loader } from "../components/Loader";
@@ -94,7 +93,7 @@ export const Dashboard: React.FC = () => {
 		setLoadingContributions(true);
 		const { data, error } = await (supabase.from("lexicon_entries") as any)
 			.select(
-				"id, word, phonetic, definition, status, created_at, base_word_id, base_word:base_words(id, word, normalized_word)",
+				"id, word, phonetic, part_of_speech, definition, example_yoruba, example_english, status, created_at, base_word_id, base_word:base_words(id, word, normalized_word), profiles!lexicon_entries_contributor_id_fkey(full_name)",
 			)
 			.eq("contributor_id", userId)
 			.order("created_at", { ascending: false });
@@ -423,66 +422,19 @@ export const Dashboard: React.FC = () => {
 										</div>
 									) : contributions.length > 0 ? (
 										visibleContributions.map((contribution) => (
-											<div
+											<motion.div
 												key={contribution.id}
-												className='glass-card p-5 rounded-xl border border-brand-ink/5 flex flex-col justify-between'
+												initial={{ opacity: 0, scale: 0.95 }}
+												animate={{ opacity: 1, scale: 1 }}
+												transition={{ delay: 1 * 0.1 }}
 											>
-												<div>
-													<div className='flex items-center space-x-3 mb-2'>
-														<h4 className='text-xl font-serif font-bold'>
-															{contribution.word}{" "}
-															{contribution.phonetic && (
-																<span className='text-brand-ink/40 text-sm'>
-																	({contribution.phonetic})
-																</span>
-															)}
-														</h4>
-														<span
-															className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-																contribution.status ===
-																"verified"
-																	? "bg-green-100 text-green-600"
-																	: "bg-brand-orange/10 text-brand-orange"
-															}`}
-														>
-															{contribution.status}
-														</span>
-													</div>
-													<p className='text-brand-ink/60 text-sm line-clamp-2'>
-														{contribution.definition}
-													</p>
-													<p className='text-brand-ink/40 text-xs mt-2'>
-														Base: {contribution.base_word?.word}
-													</p>
-												</div>
-												<div className='flex items-center justify-between mt-4 pt-4 border-t border-brand-ink/5'>
-													<div className='text-xs font-medium text-brand-ink/40'>
-														{new Date(
-															contribution.created_at,
-														).toLocaleDateString()}
-													</div>
-													<div className='flex gap-2'>
-														<button
-															onClick={() =>
-																setEditingVariantId(
-																	contribution.id,
-																)
-															}
-															className='text-brand-ink/20 hover:text-brand-ink transition-colors'
-														>
-															<Edit3 size={16} />
-														</button>
-														<button
-															onClick={() =>
-																deleteEntry(contribution.id)
-															}
-															className='text-brand-ink/20 hover:text-red-500 transition-colors'
-														>
-															<Trash2 size={16} />
-														</button>
-													</div>
-												</div>
-											</div>
+												<ContributionCard
+													key={contribution.id}
+													contribution={contribution}
+													onEdit={setEditingVariantId}
+													onDelete={deleteEntry}
+												/>
+											</motion.div>
 										))
 									) : (
 										<div className='col-span-2 text-center py-12 text-brand-ink/40 font-medium'>

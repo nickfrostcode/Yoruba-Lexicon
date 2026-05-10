@@ -31,39 +31,49 @@ export const Browse: React.FC = () => {
 		setLoading(true);
 		let query = supabase
 			.from("base_words")
-			.select("id, word, normalized_word, syllables, lexicon_entries!inner(id, status)")
+			.select(
+				"id, word, normalized_word, syllables, lexicon_entries!inner(id, status)",
+			)
 			.order("word", { ascending: true });
 
 		if (selectedLetter !== "all") {
 			// use the alphabet column for better precision if possible, but ILIKE works too
-			query = query.ilike("normalized_word", `${selectedLetter.toLowerCase()}%`);
+			query = query.ilike(
+				"normalized_word",
+				`${selectedLetter.toLowerCase()}%`,
+			);
 		}
 
 		const { data, error } = await query;
 		if (error) {
 			console.error("Error fetching entries:", error);
 		} else {
-            // Because there might be multiple variants
-            const formatted = (data as any[] || []).map(b => ({
-                id: b.id,
-                word: b.word,
+			// Because there might be multiple variants
+			const formatted = ((data as any[]) || []).map((b) => ({
+				id: b.id,
+				word: b.word,
 				syllables: b.syllables,
-                variant_count: Array.isArray(b.lexicon_entries) ? b.lexicon_entries.length : 0,
-				has_verified: Array.isArray(b.lexicon_entries) ? b.lexicon_entries.some((e: any) => e.status === "verified") : false
-            }));
-            
-            // Due to !inner, a single base_word may be duplicated if PostgREST flattens it, but usually it nests.
-            // Just unique by id to be safe
-            const unique = Array.from(new Map(formatted.map(item => [item.id, item])).values());
-            
+				variant_count: Array.isArray(b.lexicon_entries)
+					? b.lexicon_entries.length
+					: 0,
+				has_verified: Array.isArray(b.lexicon_entries)
+					? b.lexicon_entries.some((e: any) => e.status === "verified")
+					: false,
+			}));
+
+			// Due to !inner, a single base_word may be duplicated if PostgREST flattens it, but usually it nests.
+			// Just unique by id to be safe
+			const unique = Array.from(
+				new Map(formatted.map((item) => [item.id, item])).values(),
+			);
+
 			setEntries(unique);
 		}
 		setLoading(false);
 	};
 
-	const filteredEntries = entries.filter(
-		(entry) =>
-			entry.word.toLowerCase().includes(searchTerm.toLowerCase())
+	const filteredEntries = entries.filter((entry) =>
+		entry.word.toLowerCase().includes(searchTerm.toLowerCase()),
 	);
 
 	const totalPages = Math.ceil(filteredEntries.length / ITEMS_PER_PAGE);
@@ -91,7 +101,10 @@ export const Browse: React.FC = () => {
 				<FilterPills
 					items={[
 						{ key: "all", label: "All" },
-						...YORUBA_ALPHABET.map((letter) => ({ key: letter, label: letter })),
+						...YORUBA_ALPHABET.map((letter) => ({
+							key: letter,
+							label: letter,
+						})),
 					]}
 					value={selectedLetter}
 					onChange={setSelectedLetter}

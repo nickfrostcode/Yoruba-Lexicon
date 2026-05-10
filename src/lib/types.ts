@@ -17,7 +17,8 @@ export interface LexiconEntry {
 	base_word_id: string;
 	word: string;
 	phonetic: string | null;
-	part_of_speech: string | null;
+   part_of_speech: string | null;
+   syllables: number | null;
 	definition: string;
 	example_yoruba: string | null;
 	example_english: string | null;
@@ -43,10 +44,14 @@ export interface Contribution {
 	base_word_id: string;
 	word: string;
 	phonetic: string;
+	part_of_speech: string | null;
 	definition: string;
+	example_yoruba: string | null;
+	example_english: string | null;
 	status: "unverified" | "verified";
 	created_at: string;
 	base_word?: BaseWord; // joined data
+	profiles?: { full_name: string }; // joined data
 }
 
 export interface BrowseEntry {

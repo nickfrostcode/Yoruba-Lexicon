@@ -2,12 +2,19 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { CheckCircle, Edit3, Trash2, ChevronRight } from "lucide-react";
+import {
+	CheckCircle,
+	Edit3,
+	Trash2,
+	ChevronRight,
+	XCircle,
+} from "lucide-react";
 import { LexiconEntry } from "../lib/types";
 
 interface AdminLexiconCardProps {
 	entry: LexiconEntry;
 	onApprove: (id: string) => void;
+	onUnverify: (id: string) => void;
 	onEdit: (entry: LexiconEntry) => void;
 	onDelete: (id: string) => void;
 }
@@ -15,13 +22,14 @@ interface AdminLexiconCardProps {
 export const AdminLexiconCard: React.FC<AdminLexiconCardProps> = ({
 	entry,
 	onApprove,
+	onUnverify,
 	onEdit,
 	onDelete,
 }) => {
 	const [isExpanded, setIsExpanded] = useState(false);
 	return (
 		<div
-			className={`glass-card p-8 rounded-2xl transition-all duration-300 cursor-pointer group hover:border-brand-orange/30 ${
+			className={`relative glass-card p-6 rounded-2xl transition-all duration-300 cursor-pointer group hover:border-brand-orange/30 flex flex-col ${
 				isExpanded
 					? "ring-2 ring-brand-orange/20 shadow-2xl"
 					: "hover:shadow-lg"
@@ -32,23 +40,16 @@ export const AdminLexiconCard: React.FC<AdminLexiconCardProps> = ({
 				<div className='min-w-0 flex-1'>
 					<h3 className='text-3xl font-serif font-bold text-brand-ink group-hover:text-brand-orange transition-colors wrap-break-word'>
 						{entry.word}{" "}
-						<span className='text-brand-ink/40 text-sm'>
-							({entry.phonetic})
-						</span>
+						{entry.phonetic && (
+							<span className='text-brand-ink/40 text-sm'>
+								({entry.phonetic})
+							</span>
+						)}
 					</h3>
 					<div className='flex flex-wrap items-center gap-x-3 gap-y-1 mt-1'>
 						<span className='text-xs font-bold uppercase tracking-widest text-brand-orange'>
 							{entry.part_of_speech || "N/A"}
-						</span>
-						<span
-							className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-								entry.status === "verified"
-									? "bg-green-100 text-green-600"
-									: "bg-brand-orange/10 text-brand-orange"
-							}`}
-						>
-							{entry.status}
-						</span>
+						</span> 
 					</div>
 				</div>
 
@@ -64,6 +65,16 @@ export const AdminLexiconCard: React.FC<AdminLexiconCardProps> = ({
 							title='Verify'
 						>
 							<CheckCircle size={18} />
+						</button>
+					)}
+					{entry.status === "verified" && (
+						<button
+							type='button'
+							onClick={() => onUnverify(entry.id)}
+							className='p-2 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-colors'
+							title='Unverify'
+						>
+							<XCircle size={18} />
 						</button>
 					)}
 					<button
@@ -121,16 +132,37 @@ export const AdminLexiconCard: React.FC<AdminLexiconCardProps> = ({
 								</div>
 							)}
 						</div>
+
+						<div className='mt-6 pt-4 border-t border-brand-ink/5 flex items-center'>
+							<p className='text-xs font-medium text-brand-ink/40'>
+								{new Date(entry.created_at).toLocaleDateString()}
+							</p>
+							{entry.profiles?.full_name && (
+								<p className='text-[10px] font-bold uppercase tracking-widest text-brand-ink/30 truncate max-w-50 ml-4'>
+									by {entry.profiles.full_name}
+								</p>
+							)}
+						</div>
 					</motion.div>
 				)}
 			</AnimatePresence>
 
 			{!isExpanded && (
 				<div className='flex items-center text-xs font-bold uppercase tracking-widest text-brand-ink/30 mt-2 group-hover:text-brand-orange transition-colors'>
-					<span>View Details</span>
+					<span>More Details</span>
 					<ChevronRight size={14} className='ml-1' />
 				</div>
 			)}
+
+			<div
+				className={`absolute bottom-6 right-6 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
+					entry.status === "verified"
+						? "bg-green-100 text-green-600"
+						: "bg-brand-orange/10 text-brand-orange"
+				}`}
+			>
+				{entry.status}
+			</div>
 		</div>
 	);
 };

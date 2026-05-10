@@ -108,7 +108,9 @@ export const Admin = () => {
 		setLoadingVariants(true);
 		const { data, error } = await supabase
 			.from("lexicon_entries")
-			.select("*, base_word:base_words(id, word)")
+			.select(
+				"*, base_word:base_words(id, word), profiles!lexicon_entries_contributor_id_fkey(full_name)",
+			)
 			.order("created_at", { ascending: false });
 		if (!error && data) {
 			setVariants(data);
@@ -415,16 +417,23 @@ export const Admin = () => {
 											)
 											.slice(0, visibleVariants)
 											.map((entry) => (
-												<AdminLexiconCard
+												<motion.div
 													key={entry.id}
-													entry={entry}
-													onApprove={handleApprove}
-													onUnverify={handleUnverify}
-													onEdit={() =>
-														setEditingVariantId(entry.id)
-													}
-													onDelete={handleDeleteVariant}
-												/>
+													initial={{ opacity: 0, scale: 0.95 }}
+													animate={{ opacity: 1, scale: 1 }}
+													transition={{ delay: 1 * 0.1 }}
+												>
+													<AdminLexiconCard
+														key={entry.id}
+														entry={entry}
+														onApprove={handleApprove}
+														onUnverify={handleUnverify}
+														onEdit={() =>
+															setEditingVariantId(entry.id)
+														}
+														onDelete={handleDeleteVariant}
+													/>
+												</motion.div>
 											))}
 									</div>
 									{visibleVariants <
