@@ -2,7 +2,7 @@
 
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { BrowseEntry } from "../lib/types";
+import { BrowseEntry } from "@/src/lib/types";
 
 interface LexiconCardProps {
 	entry: BrowseEntry;

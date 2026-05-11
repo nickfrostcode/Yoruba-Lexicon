@@ -1,8 +1,8 @@
 /** @format */
 
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
-import { useAuth } from "../context/AuthContext";
+import { supabase } from "@/src/lib/supabase";
+import { useAuth } from "@/src/context/AuthContext";
 import {
 	Plus,
 	Clock,
@@ -17,18 +17,18 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
-import { Contribution, BaseWord, LexiconEntry } from "../lib/types";
+import { Contribution, BaseWord, LexiconEntry } from "@/src/lib/types";
 import {
 	normalizeWord,
 	getAlphabetChar,
 	compareBaseAndVariant,
 } from "../lib/utils";
-import { YORUBA_ALPHABET, PARTS_OF_SPEECH } from "../lib/constants";
-import { YorubaKeyboard } from "../components/YorubaKeyboard";
-import { ContributionCard } from "../components/ContributionCard";
+import { YORUBA_ALPHABET, PARTS_OF_SPEECH } from "@/src/lib/constants";
+import { YorubaKeyboard } from "@/src/components/YorubaKeyboard";
+import { ContributionCard } from "@/src/components/ContributionCard";
 
-import { EditVariantModal } from "../components/EditVariantModal";
-import { Loader } from "../components/Loader";
+import { EditVariantModal } from "@/src/components/EditVariantModal";
+import { Loader } from "@/src/components/Loader";
 
 const INITIAL_VISIBLE = 6;
 const LOAD_MORE_COUNT = 6;

@@ -14,7 +14,7 @@ import {
 	User,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@/src/context/AuthContext";
 
 export const Navbar: React.FC = () => {
 	const [isOpen, setIsOpen] = useState(false);

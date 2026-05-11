@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Volume2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { LexiconEntry } from "../lib/types";
+import { LexiconEntry } from "@/src/lib/types";
 
 interface VariantDetailCardProps {
 	variant: LexiconEntry;

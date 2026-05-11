@@ -1,14 +1,14 @@
 /** @format */
 
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/src/lib/supabase";
 import { motion, AnimatePresence } from "motion/react";
-import { PageHeader } from "../components/PageHeader";
-import { FilterPills } from "../components/FilterPills";
-import { Pagination } from "../components/Pagination";
-import { LexiconCard } from "../components/LexiconCard";
-import { BrowseEntry } from "../lib/types";
-import { YORUBA_ALPHABET } from "../lib/constants";
+import { PageHeader } from "@/src/components/PageHeader";
+import { FilterPills } from "@/src/components/FilterPills";
+import { Pagination } from "@/src/components/Pagination";
+import { LexiconCard } from "@/src/components/LexiconCard";
+import { BrowseEntry } from "@/src/lib/types";
+import { YORUBA_ALPHABET } from "@/src/lib/constants";
 
 const ITEMS_PER_PAGE = 12; // divisible by 3, 2, and 1 — fits all grid layouts
 

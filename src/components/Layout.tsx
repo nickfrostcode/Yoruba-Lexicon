@@ -1,8 +1,8 @@
 /** @format */
 
 import React from "react";
-import { Navbar } from "./Navbar";
-import { Footer } from "./Footer";
+import { Navbar } from "@/src/components/Navbar";
+import { Footer } from "@/src/components/Footer";
 import { motion, AnimatePresence } from "motion/react";
 import { Toaster } from "sonner";
 

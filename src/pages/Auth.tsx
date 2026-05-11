@@ -1,9 +1,9 @@
 /** @format */
 
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/src/lib/supabase";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@/src/context/AuthContext";
 import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { AuthError } from "@supabase/supabase-js";

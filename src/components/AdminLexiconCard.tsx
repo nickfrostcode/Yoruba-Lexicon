@@ -9,7 +9,7 @@ import {
 	ChevronRight,
 	XCircle,
 } from "lucide-react";
-import { LexiconEntry } from "../lib/types";
+import { LexiconEntry } from "@/src/lib/types";
 
 interface AdminLexiconCardProps {
 	entry: LexiconEntry;

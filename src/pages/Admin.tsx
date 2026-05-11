@@ -1,7 +1,7 @@
 /** @format */
 
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/src/lib/supabase";
 import {
 	ShieldCheck,
 	CheckCircle,
@@ -15,11 +15,11 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
-import { BaseWord, LexiconEntry } from "../lib/types";
-import { AdminLexiconCard } from "../components/AdminLexiconCard";
-import { EditVariantModal } from "../components/EditVariantModal";
-import { EditBaseWordModal } from "../components/EditBaseWordModal";
-import { Loader } from "../components/Loader";
+import { BaseWord, LexiconEntry } from "@/src/lib/types";
+import { AdminLexiconCard } from "@/src/components/AdminLexiconCard";
+import { EditVariantModal } from "@/src/components/EditVariantModal";
+import { EditBaseWordModal } from "@/src/components/EditBaseWordModal";
+import { Loader } from "@/src/components/Loader";
 
 const LOAD_MORE_COUNT = 10;
 

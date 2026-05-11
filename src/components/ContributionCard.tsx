@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Edit3, Trash2, ChevronRight } from "lucide-react";
-import { Contribution } from "../lib/types";
+import { Contribution } from "@/src/lib/types";
 
 interface ContributionCardProps {
 	contribution: Contribution;

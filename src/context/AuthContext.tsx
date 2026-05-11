@@ -10,7 +10,7 @@ import {
 	useState,
 } from "react";
 import type { Session, User as SupabaseAuthUser } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/src/lib/supabase";
 
 interface AuthUser {
 	id: string;

@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/src/lib/supabase";
 import { ChevronLeft } from "lucide-react";
-import { Loader } from "../components/Loader";
+import { Loader } from "@/src/components/Loader";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { BaseWord, LexiconEntry } from "../lib/types";
-import { VariantDetailCard } from "../components/VariantDetailCard";
+import { BaseWord, LexiconEntry } from "@/src/lib/types";
+import { VariantDetailCard } from "@/src/components/VariantDetailCard";
 
 export const BaseWordDetail: React.FC = () => {
 	const { id } = useParams<{ id: string }>();

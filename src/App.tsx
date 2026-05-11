@@ -7,18 +7,18 @@ import {
 	Route,
 	Navigate,
 } from "react-router-dom";
-import { Layout } from "./components/Layout";
-import { Landing } from "./pages/Landing";
-import { Browse } from "./pages/Browse";
-import { BaseWordDetail } from "./pages/BaseWordDetail";
-import { Dashboard } from "./pages/Dashboard";
-import { Auth } from "./pages/Auth";
-import { Admin } from "./pages/Admin";
-import { Contributors } from "./pages/Contributors";
-import { AuthProvider } from "./context/AuthContext";
-import { ProtectedRoute } from "./lib/ProtectedRoute";
-import { AdminRoute } from "./lib/AdminRoute";
-import { ScrollToTop } from "./components/ScrollToTop";
+import { Layout } from "@/src/components/Layout";
+import { Landing } from "@/src/pages/Landing";
+import { Browse } from "@/src/pages/Browse";
+import { BaseWordDetail } from "@/src/pages/BaseWordDetail";
+import { Dashboard } from "@/src/pages/Dashboard";
+import { Auth } from "@/src/pages/Auth";
+import { Admin } from "@/src/pages/Admin";
+import { Contributors } from "@/src/pages/Contributors";
+import { AuthProvider } from "@/src/context/AuthContext";
+import { ProtectedRoute } from "@/src/lib/ProtectedRoute";
+import { AdminRoute } from "@/src/lib/AdminRoute";
+import { ScrollToTop } from "@/src/components/ScrollToTop";
 
 export default function App() {
 	return (

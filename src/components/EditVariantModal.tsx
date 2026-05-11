@@ -1,8 +1,8 @@
 /** @format */
 
 import React, { useState, useEffect, FormEvent } from "react";
-import { supabase } from "../lib/supabase";
-import { LexiconEntryForm } from "../lib/types";
+import { supabase } from "@/src/lib/supabase";
+import { LexiconEntryForm } from "@/src/lib/types";
 
 type LexiconEntryRow = {
 	base_word_id: string;
@@ -13,10 +13,10 @@ type LexiconEntryRow = {
 	example_yoruba: string | null;
 	example_english: string | null;
 };
-import { EntryForm } from "./EntryForm";
-import { Modal } from "./Modal";
+import { EntryForm } from "@/src/components/EntryForm";
+import { Modal } from "@/src/components/Modal";
 import { toast } from "sonner";
-import { Loader } from "../components/Loader";
+import { Loader } from "@/src/components/Loader";
 
 interface EditVariantModalProps {
 	id: string | null;

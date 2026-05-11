@@ -1,9 +1,9 @@
 /** @format */
 
 import { Save } from "lucide-react";
-import { LexiconEntryForm } from "../lib/types";
+import { LexiconEntryForm } from "@/src/lib/types";
 
-import { PARTS_OF_SPEECH } from "../lib/constants";
+import { PARTS_OF_SPEECH } from "@/src/lib/constants";
 
 interface EntryFormProps {
 	entry: LexiconEntryForm;

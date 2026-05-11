@@ -1,6 +1,6 @@
 /** @format */
 
-import { YORUBA_ALPHABET } from "./constants";
+import { YORUBA_ALPHABET } from "@/src/lib/constants";
 
 const TONE_MAP: Record<string, string> = {
     'à': 'a', 'á': 'a', 'â': 'a', 'ǎ': 'a',
