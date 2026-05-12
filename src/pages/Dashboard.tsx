@@ -30,8 +30,8 @@ import { ContributionCard } from "@/src/components/ContributionCard";
 import { EditVariantModal } from "@/src/components/EditVariantModal";
 import { Loader } from "@/src/components/Loader";
 
-const INITIAL_VISIBLE = 6;
-const LOAD_MORE_COUNT = 6;
+const INITIAL_VISIBLE = 10;
+const LOAD_MORE_COUNT = 10;
 
 type Tab = "overview" | "base-words" | "variants";
 
@@ -127,7 +127,7 @@ export const Dashboard: React.FC = () => {
 			.select("*")
 			.eq("alphabet", letter)
 			.eq("created_by", user.id)
-			.order("word", { ascending: true });
+			.order("created_at", { ascending: false });
 
 		if (!error && data) {
 			setBaseWords(data);
@@ -620,7 +620,10 @@ export const Dashboard: React.FC = () => {
 											</button>
 										))}
 									</div>
-
+									<div className='text-sm font-medium'>
+										{" "}
+										Click on word to add variants
+									</div>
 									<div className='bg-white rounded-2xl border border-brand-ink/5 overflow-hidden'>
 										{loadingBaseWords ? (
 											<Loader text='Loading base words...' />
@@ -776,8 +779,8 @@ export const Dashboard: React.FC = () => {
 													type='text'
 													className='input-field'
 													placeholder='e.g. m-d-r'
-													pattern="^(d|r|m)(-(d|r|m))*$"
-													title="Only use d, r, m and hyphens (e.g. m-d-r)"
+													pattern='^(d|r|m)(-(d|r|m))*$'
+													title='Only use d, r, m and hyphens (e.g. m-d-r)'
 													value={variantForm.phonetic}
 													onChange={(e) =>
 														setVariantForm({
