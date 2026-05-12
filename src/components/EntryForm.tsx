@@ -89,6 +89,8 @@ export const EntryForm: React.FC<EntryFormProps> = ({
 						type='text'
 						className='input-field'
 						placeholder='e.g. m-d-r'
+						pattern="^(d|r|m)(-(d|r|m))*$"
+						title="Only use d, r, m and hyphens (e.g. m-d-r)"
 						value={entry.phonetic}
 						onChange={(e) => updateField("phonetic", e.target.value.normalize("NFC"))}
 					/>

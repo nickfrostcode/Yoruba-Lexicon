@@ -776,6 +776,8 @@ export const Dashboard: React.FC = () => {
 													type='text'
 													className='input-field'
 													placeholder='e.g. m-d-r'
+													pattern="^(d|r|m)(-(d|r|m))*$"
+													title="Only use d, r, m and hyphens (e.g. m-d-r)"
 													value={variantForm.phonetic}
 													onChange={(e) =>
 														setVariantForm({
