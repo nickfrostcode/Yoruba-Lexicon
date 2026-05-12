@@ -14,6 +14,8 @@ import {
 	Layers,
 	Save,
 	Loader2,
+	Edit3,
+	Trash2,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -28,6 +30,7 @@ import { YorubaKeyboard } from "@/src/components/YorubaKeyboard";
 import { ContributionCard } from "@/src/components/ContributionCard";
 
 import { EditVariantModal } from "@/src/components/EditVariantModal";
+import { EditBaseWordModal } from "@/src/components/EditBaseWordModal";
 import { Loader } from "@/src/components/Loader";
 
 const INITIAL_VISIBLE = 10;
@@ -45,6 +48,7 @@ export const Dashboard: React.FC = () => {
 	);
 
 	// Overview State
+	const [overviewTab, setOverviewTab] = useState<"variants" | "base-words">("variants");
 	const [contributions, setContributions] = useState<Contribution[]>([]);
 	const [loadingContributions, setLoadingContributions] = useState(true);
 	const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
@@ -54,6 +58,15 @@ export const Dashboard: React.FC = () => {
 	const [contributionsSortBy, setContributionsSortBy] = useState<
 		"date-down" | "date-up" | "a-z" | "z-a"
 	>("date-down");
+
+	const [overviewBaseWords, setOverviewBaseWords] = useState<BaseWord[]>([]);
+	const [loadingOverviewBaseWords, setLoadingOverviewBaseWords] = useState(true);
+	const [overviewBaseWordsVisible, setOverviewBaseWordsVisible] = useState(INITIAL_VISIBLE);
+	const [overviewBaseWordsFilter, setOverviewBaseWordsFilter] = useState<string>("all");
+	const [overviewBaseWordsSortBy, setOverviewBaseWordsSortBy] = useState<
+		"date-down" | "date-up" | "a-z" | "z-a"
+	>("date-down");
+	const [editingBaseWordId, setEditingBaseWordId] = useState<string | null>(null);
 
 	// Base Word Form State
 	const [baseWordInput, setBaseWordInput] = useState("");
@@ -89,8 +102,23 @@ export const Dashboard: React.FC = () => {
 	useEffect(() => {
 		if (user) {
 			fetchContributions(user.id);
+			fetchOverviewBaseWords(user.id);
 		}
 	}, [user]);
+
+	const fetchOverviewBaseWords = async (userId: string) => {
+		setLoadingOverviewBaseWords(true);
+		const { data, error } = await supabase
+			.from("base_words")
+			.select("*")
+			.eq("created_by", userId)
+			.order("created_at", { ascending: false });
+
+		if (!error && data) {
+			setOverviewBaseWords(data);
+		}
+		setLoadingOverviewBaseWords(false);
+	};
 
 	useEffect(() => {
 		if (activeTab !== "variants" || selectedBaseWord) return;
@@ -159,6 +187,56 @@ export const Dashboard: React.FC = () => {
 	const handleLoadMore = async () => {
 		await new Promise((r) => setTimeout(r, 400));
 		setVisibleCount((prev) => prev + LOAD_MORE_COUNT);
+	};
+
+	const handleDeleteOverviewBaseWord = async (id: string) => {
+		if (
+			!confirm(
+				"Are you sure you want to delete this base word? All related variants may also be removed.",
+			)
+		)
+			return;
+
+		const { error } = await supabase.from("base_words").delete().eq("id", id);
+		if (error) {
+			toast.error("Error deleting base word.");
+		} else {
+			toast.success("Base Word deleted.");
+			if (user) fetchOverviewBaseWords(user.id);
+		}
+	};
+
+	const availableOverviewAlphabets = Array.from(
+		new Set(overviewBaseWords.map((bw) => bw.alphabet).filter(Boolean)),
+	).sort((a, b) => a.localeCompare(b));
+
+	const getSortedAndFilteredOverviewBaseWords = () => {
+		let filtered = overviewBaseWords.filter((bw) =>
+			overviewBaseWordsFilter === "all" ? true : bw.alphabet === overviewBaseWordsFilter,
+		);
+
+		const sorted = [...filtered].sort((a, b) => {
+			switch (overviewBaseWordsSortBy) {
+				case "date-up":
+					return (
+						new Date(a.created_at).getTime() -
+						new Date(b.created_at).getTime()
+					);
+				case "date-down":
+					return (
+						new Date(b.created_at).getTime() -
+						new Date(a.created_at).getTime()
+					);
+				case "a-z":
+					return (a.word || "").localeCompare(b.word || "");
+				case "z-a":
+					return (b.word || "").localeCompare(a.word || "");
+				default:
+					return 0;
+			}
+		});
+
+		return sorted;
 	};
 
 	const deleteEntry = async (id: string) => {
@@ -473,74 +551,205 @@ export const Dashboard: React.FC = () => {
 							</div>
 
 							<div>
-								<div className='flex justify-between items-center mb-6 flex-wrap gap-4'>
-									<h3 className='text-2xl font-serif font-bold'>
-										My Contributions
-									</h3>
-									<div className='flex gap-3'>
-										<select
-											className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
-											style={{ width: "auto" }}
-											value={contributionsFilter}
-											onChange={(e) => {
-												setContributionsFilter(e.target.value as any);
-												setVisibleCount(INITIAL_VISIBLE);
-											}}
-										>
-											<option value='all'>All Status</option>
-											<option value='verified'>Verified</option>
-											<option value='unverified'>Unverified</option>
-										</select>
-										<select
-											className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
-											style={{ width: "auto" }}
-											value={contributionsSortBy}
-											onChange={(e) => {
-												setContributionsSortBy(e.target.value as any);
-												setVisibleCount(INITIAL_VISIBLE);
-											}}
-										>
-											<option value='date-down'>Newest First</option>
-											<option value='date-up'>Oldest First</option>
-											<option value='a-z'>A - Z</option>
-											<option value='z-a'>Z - A</option>
-										</select>
-									</div>
-								</div>
-								<div className='grid gap-4 grid-cols-1 md:grid-cols-2'>
-									{loadingContributions ? (
-										<div className='col-span-2'>
-											<Loader text='Loading contributions...' />
-										</div>
-									) : getSortedAndFilteredContributions().length > 0 ? (
-										visibleContributions.map((contribution) => (
-											<motion.div
-												key={contribution.id}
-												initial={{ opacity: 0, scale: 0.95 }}
-												animate={{ opacity: 1, scale: 1 }}
-												transition={{ delay: 1 * 0.1 }}
-											>
-												<ContributionCard
-													key={contribution.id}
-													contribution={contribution}
-													onEdit={setEditingVariantId}
-													onDelete={deleteEntry}
-												/>
-											</motion.div>
-										))
-									) : (
-										<div className='col-span-2 text-center py-12 text-brand-ink/40 font-medium'>
-											No contributions yet.
-										</div>
-									)}
-								</div>
-								{hasMore && (
+								<div className='flex space-x-4 mb-6 border-b border-brand-ink/10 pb-2'>
 									<button
-										onClick={handleLoadMore}
-										className='w-full py-4 flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-widest text-brand-orange hover:bg-brand-orange/5 mt-4 rounded-xl transition-colors'
+										onClick={() => setOverviewTab("variants")}
+										className={`pb-2 font-bold cursor-pointer transition-colors ${
+											overviewTab === "variants"
+												? "text-brand-orange border-b-2 border-brand-orange"
+												: "text-brand-ink/40 hover:text-brand-ink"
+										}`}
 									>
-										<ChevronDown size={16} /> Load More
+										Variants
 									</button>
+									<button
+										onClick={() => setOverviewTab("base-words")}
+										className={`pb-2 font-bold cursor-pointer transition-colors ${
+											overviewTab === "base-words"
+												? "text-brand-orange border-b-2 border-brand-orange"
+												: "text-brand-ink/40 hover:text-brand-ink"
+										}`}
+									>
+										Base Words
+									</button>
+								</div>
+
+								{overviewTab === "variants" && (
+									<div>
+										<div className='flex justify-between items-center mb-6 flex-wrap gap-4'>
+											<h3 className='text-2xl font-serif font-bold'>
+												My Contributions
+											</h3>
+											<div className='flex gap-3'>
+												<select
+													className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
+													style={{ width: "auto" }}
+													value={contributionsFilter}
+													onChange={(e) => {
+														setContributionsFilter(e.target.value as any);
+														setVisibleCount(INITIAL_VISIBLE);
+													}}
+												>
+													<option value='all'>All Status</option>
+													<option value='verified'>Verified</option>
+													<option value='unverified'>Unverified</option>
+												</select>
+												<select
+													className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
+													style={{ width: "auto" }}
+													value={contributionsSortBy}
+													onChange={(e) => {
+														setContributionsSortBy(e.target.value as any);
+														setVisibleCount(INITIAL_VISIBLE);
+													}}
+												>
+													<option value='date-down'>Newest First</option>
+													<option value='date-up'>Oldest First</option>
+													<option value='a-z'>A - Z</option>
+													<option value='z-a'>Z - A</option>
+												</select>
+											</div>
+										</div>
+										<div className='grid gap-4 grid-cols-1 md:grid-cols-2'>
+											{loadingContributions ? (
+												<div className='col-span-2'>
+													<Loader text='Loading contributions...' />
+												</div>
+											) : getSortedAndFilteredContributions().length > 0 ? (
+												visibleContributions.map((contribution) => (
+													<motion.div
+														key={contribution.id}
+														initial={{ opacity: 0, scale: 0.95 }}
+														animate={{ opacity: 1, scale: 1 }}
+														transition={{ delay: 1 * 0.1 }}
+													>
+														<ContributionCard
+															key={contribution.id}
+															contribution={contribution}
+															onEdit={setEditingVariantId}
+															onDelete={deleteEntry}
+														/>
+													</motion.div>
+												))
+											) : (
+												<div className='col-span-2 text-center py-12 text-brand-ink/40 font-medium'>
+													No contributions yet.
+												</div>
+											)}
+										</div>
+										{hasMore && (
+											<button
+												onClick={handleLoadMore}
+												className='w-full py-4 flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-widest text-brand-orange hover:bg-brand-orange/5 mt-4 rounded-xl transition-colors cursor-pointer'
+											>
+												<ChevronDown size={16} /> Load More
+											</button>
+										)}
+									</div>
+								)}
+
+								{overviewTab === "base-words" && (
+									<div>
+										<div className='flex justify-between items-center mb-6 flex-wrap gap-4'>
+											<h3 className='text-2xl font-serif font-bold'>
+												My Base Words
+											</h3>
+											<div className='flex gap-3'>
+												<select
+													className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
+													style={{ width: "auto" }}
+													value={overviewBaseWordsFilter}
+													onChange={(e) => {
+														setOverviewBaseWordsFilter(e.target.value);
+														setOverviewBaseWordsVisible(LOAD_MORE_COUNT);
+													}}
+												>
+													<option value='all'>All Letters</option>
+													{availableOverviewAlphabets.map((letter) => (
+														<option key={letter} value={letter}>
+															Letter {letter.toUpperCase()}
+														</option>
+													))}
+												</select>
+												<select
+													className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
+													style={{ width: "auto" }}
+													value={overviewBaseWordsSortBy}
+													onChange={(e) => {
+														setOverviewBaseWordsSortBy(e.target.value as any);
+														setOverviewBaseWordsVisible(LOAD_MORE_COUNT);
+													}}
+												>
+													<option value='date-down'>Newest First</option>
+													<option value='date-up'>Oldest First</option>
+													<option value='a-z'>A - Z</option>
+													<option value='z-a'>Z - A</option>
+												</select>
+											</div>
+										</div>
+										<div className='bg-white rounded-2xl border border-brand-ink/5 overflow-hidden'>
+											{loadingOverviewBaseWords ? (
+												<Loader text='Loading base words...' />
+											) : overviewBaseWords.length > 0 ? (
+												<div className='flex flex-col'>
+													<ul className='divide-y divide-brand-ink/5 max-h-[60vh] overflow-y-auto'>
+														{getSortedAndFilteredOverviewBaseWords()
+															.slice(0, overviewBaseWordsVisible)
+															.map((bw) => (
+																<li
+																	key={bw.id}
+																	className='p-4 flex justify-between items-center group'
+																>
+																	<div>
+																		<span className='font-serif font-bold text-lg'>
+																			{bw.word} &ensp;
+																		</span>
+																		<span className='text-sm text-brand-ink/40 truncate max-w-50'>
+																			{`${bw.syllables ?? "N/A"} syllables`}
+																		</span>
+																		{bw.note && (
+																			<p className='text-xs text-brand-ink/40 line-clamp-1 mt-1'>
+																				{bw.note}
+																			</p>
+																		)}
+																	</div>
+																	<div className='flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
+																		<button
+																			className='text-brand-ink/40 hover:text-brand-orange cursor-pointer p-2'
+																			onClick={() => setEditingBaseWordId(bw.id)}
+																		>
+																			<Edit3 size={18} />
+																		</button>
+																		<button
+																			className='text-brand-ink/40 hover:text-red-500 cursor-pointer p-2'
+																			onClick={() => handleDeleteOverviewBaseWord(bw.id)}
+																		>
+																			<Trash2 size={18} />
+																		</button>
+																	</div>
+																</li>
+															))}
+													</ul>
+													{overviewBaseWordsVisible < getSortedAndFilteredOverviewBaseWords().length && (
+														<div className='p-4 border-t border-brand-ink/5 bg-gray-50/50'>
+															<button
+																onClick={() =>
+																	setOverviewBaseWordsVisible((prev) => prev + LOAD_MORE_COUNT)
+																}
+																className='w-full py-2 flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-widest text-brand-orange hover:bg-brand-orange/5 rounded-xl transition-colors cursor-pointer'
+															>
+																<ChevronDown size={16} /> Load More
+															</button>
+														</div>
+													)}
+												</div>
+											) : (
+												<div className='py-12 text-center text-brand-ink/40'>
+													No base words found.
+												</div>
+											)}
+										</div>
+									</div>
 								)}
 							</div>
 						</motion.div>
@@ -974,7 +1183,19 @@ export const Dashboard: React.FC = () => {
 				id={editingVariantId}
 				onClose={() => setEditingVariantId(null)}
 				onSuccess={() => {
-					if (user) fetchContributions(user.id);
+					if (user) {
+						fetchContributions(user.id);
+					}
+				}}
+			/>
+
+			<EditBaseWordModal
+				id={editingBaseWordId}
+				onClose={() => setEditingBaseWordId(null)}
+				onSuccess={() => {
+					if (user) {
+						fetchOverviewBaseWords(user.id);
+					}
 				}}
 			/>
 		</div>
