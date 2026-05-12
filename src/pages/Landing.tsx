@@ -37,7 +37,7 @@ export const Landing: React.FC = () => {
 	return (
 		<div className='overflow-hidden bg-brand-cream selection:bg-brand-orange/30 selection:text-brand-ink'>
 			{/* Modern Hero Section */}
-			<section className='relative min-h-[90vh] flex items-center justify-center pt-24 pb-32 md:pt-32 md:pb-48'>
+			<section className='relative min-h-[90vh] flex items-center justify-center pt-24 pb-32 md:pt-15 md:pb-48'>
 				{/* Abstract Background Elements */}
 				<div className='absolute inset-0 z-0 overflow-hidden pointer-events-none'>
 					<div className='absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))]from-brand-orange/10 via-brand-cream to-brand-cream'></div>
