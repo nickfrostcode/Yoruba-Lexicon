@@ -268,8 +268,7 @@ export const Dashboard: React.FC = () => {
 				example_yoruba: "",
 				example_english: "",
 			});
-			setSelectedBaseWord(null);
-			setExistingVariants([]);
+			fetchExistingVariants(selectedBaseWord.id);
 			fetchContributions(user.id);
 		} catch (err: any) {
 			toast.error(err.message || "Error submitting variant.");
