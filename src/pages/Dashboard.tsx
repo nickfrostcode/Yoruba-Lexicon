@@ -48,6 +48,12 @@ export const Dashboard: React.FC = () => {
 	const [contributions, setContributions] = useState<Contribution[]>([]);
 	const [loadingContributions, setLoadingContributions] = useState(true);
 	const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+	const [contributionsFilter, setContributionsFilter] = useState<
+		"all" | "verified" | "unverified"
+	>("all");
+	const [contributionsSortBy, setContributionsSortBy] = useState<
+		"date-down" | "date-up" | "a-z" | "z-a"
+	>("date-down");
 
 	// Base Word Form State
 	const [baseWordInput, setBaseWordInput] = useState("");
@@ -286,8 +292,37 @@ export const Dashboard: React.FC = () => {
 		user?.email?.split("@")[0] ||
 		"Contributor";
 
-	const visibleContributions = contributions.slice(0, visibleCount);
-	const hasMore = visibleCount < contributions.length;
+	const getSortedAndFilteredContributions = () => {
+		let filtered = contributions.filter((c) =>
+			contributionsFilter === "all" ? true : c.status === contributionsFilter,
+		);
+
+		const sorted = [...filtered].sort((a, b) => {
+			switch (contributionsSortBy) {
+				case "date-up":
+					return (
+						new Date(a.created_at).getTime() -
+						new Date(b.created_at).getTime()
+					);
+				case "date-down":
+					return (
+						new Date(b.created_at).getTime() -
+						new Date(a.created_at).getTime()
+					);
+				case "a-z":
+					return (a.word || "").localeCompare(b.word || "");
+				case "z-a":
+					return (b.word || "").localeCompare(a.word || "");
+				default:
+					return 0;
+			}
+		});
+
+		return sorted;
+	};
+
+	const visibleContributions = getSortedAndFilteredContributions().slice(0, visibleCount);
+	const hasMore = visibleCount < getSortedAndFilteredContributions().length;
 
 	return (
 		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
@@ -438,15 +473,46 @@ export const Dashboard: React.FC = () => {
 							</div>
 
 							<div>
-								<h3 className='text-2xl font-serif font-bold mb-6'>
-									My Contributions
-								</h3>
+								<div className='flex justify-between items-center mb-6 flex-wrap gap-4'>
+									<h3 className='text-2xl font-serif font-bold'>
+										My Contributions
+									</h3>
+									<div className='flex gap-3'>
+										<select
+											className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
+											style={{ width: "auto" }}
+											value={contributionsFilter}
+											onChange={(e) => {
+												setContributionsFilter(e.target.value as any);
+												setVisibleCount(INITIAL_VISIBLE);
+											}}
+										>
+											<option value='all'>All Status</option>
+											<option value='verified'>Verified</option>
+											<option value='unverified'>Unverified</option>
+										</select>
+										<select
+											className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
+											style={{ width: "auto" }}
+											value={contributionsSortBy}
+											onChange={(e) => {
+												setContributionsSortBy(e.target.value as any);
+												setVisibleCount(INITIAL_VISIBLE);
+											}}
+										>
+											<option value='date-down'>Newest First</option>
+											<option value='date-up'>Oldest First</option>
+											<option value='a-z'>A - Z</option>
+											<option value='z-a'>Z - A</option>
+										</select>
+									</div>
+								</div>
 								<div className='grid gap-4 grid-cols-1 md:grid-cols-2'>
 									{loadingContributions ? (
 										<div className='col-span-2'>
 											<Loader text='Loading contributions...' />
 										</div>
-									) : contributions.length > 0 ? (
+									) : getSortedAndFilteredContributions().length > 0 ? (
 										visibleContributions.map((contribution) => (
 											<motion.div
 												key={contribution.id}
