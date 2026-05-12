@@ -21,7 +21,7 @@ import { EditVariantModal } from "@/src/components/EditVariantModal";
 import { EditBaseWordModal } from "@/src/components/EditBaseWordModal";
 import { Loader } from "@/src/components/Loader";
 
-const LOAD_MORE_COUNT = 10;
+const LOAD_MORE_COUNT = 20;
 
 type Tab = "overview" | "base-words" | "variants";
 
@@ -51,6 +51,11 @@ export const Admin = () => {
 		"all" | "verified" | "unverified"
 	>("all");
 	const [variantsSortBy, setVariantsSortBy] = useState<
+		"date-down" | "date-up" | "a-z" | "z-a"
+	>("date-down");
+
+	const [baseWordsFilter, setBaseWordsFilter] = useState<string>("all");
+	const [baseWordsSortBy, setBaseWordsSortBy] = useState<
 		"date-down" | "date-up" | "a-z" | "z-a"
 	>("date-down");
 
@@ -214,6 +219,39 @@ export const Admin = () => {
 		return sorted;
 	};
 
+	const availableAlphabets = Array.from(
+		new Set(baseWords.map((bw) => bw.alphabet).filter(Boolean)),
+	).sort((a, b) => a.localeCompare(b));
+
+	const getSortedAndFilteredBaseWords = () => {
+		let filtered = baseWords.filter((bw) =>
+			baseWordsFilter === "all" ? true : bw.alphabet === baseWordsFilter,
+		);
+
+		const sorted = [...filtered].sort((a, b) => {
+			switch (baseWordsSortBy) {
+				case "date-up":
+					return (
+						new Date(a.created_at).getTime() -
+						new Date(b.created_at).getTime()
+					);
+				case "date-down":
+					return (
+						new Date(b.created_at).getTime() -
+						new Date(a.created_at).getTime()
+					);
+				case "a-z":
+					return (a.word || "").localeCompare(b.word || "");
+				case "z-a":
+					return (b.word || "").localeCompare(a.word || "");
+				default:
+					return 0;
+			}
+		});
+
+		return sorted;
+	};
+
 	return (
 		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
 			<div className='flex items-center space-x-4 mb-12'>
@@ -341,10 +379,42 @@ export const Admin = () => {
 							animate={{ opacity: 1, y: 0 }}
 							className='space-y-6'
 						>
-							<div className='flex justify-between items-center mb-6'>
+							<div className='flex justify-between items-center mb-6 flex-wrap gap-4'>
 								<h2 className='text-3xl font-serif font-bold'>
 									Manage Base Words
 								</h2>
+								<div className='flex gap-3'>
+									<select
+										className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
+										style={{ width: "auto" }}
+										value={baseWordsFilter}
+										onChange={(e) => {
+											setBaseWordsFilter(e.target.value);
+											setVisibleBaseWords(LOAD_MORE_COUNT);
+										}}
+									>
+										<option value='all'>All Letters</option>
+										{availableAlphabets.map((letter) => (
+											<option key={letter} value={letter}>
+												Letter {letter.toUpperCase()}
+											</option>
+										))}
+									</select>
+									<select
+										className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
+										style={{ width: "auto" }}
+										value={baseWordsSortBy}
+										onChange={(e) => {
+											setBaseWordsSortBy(e.target.value as any);
+											setVisibleBaseWords(LOAD_MORE_COUNT);
+										}}
+									>
+										<option value='date-down'>Newest First</option>
+										<option value='date-up'>Oldest First</option>
+										<option value='a-z'>A - Z</option>
+										<option value='z-a'>Z - A</option>
+									</select>
+								</div>
 							</div>
 							<div className='bg-white rounded-2xl border border-brand-ink/5 overflow-hidden'>
 								{loadingBaseWords ? (
@@ -352,7 +422,7 @@ export const Admin = () => {
 								) : baseWords.length > 0 ? (
 									<div className='flex flex-col'>
 										<ul className='divide-y divide-brand-ink/5 max-h-[60vh] overflow-y-auto'>
-											{baseWords
+											{getSortedAndFilteredBaseWords()
 												.slice(0, visibleBaseWords)
 												.map((bw) => (
 													<li
@@ -396,7 +466,7 @@ export const Admin = () => {
 													</li>
 												))}
 										</ul>
-										{visibleBaseWords < baseWords.length && (
+										{visibleBaseWords < getSortedAndFilteredBaseWords().length && (
 											<div className='p-4 border-t border-brand-ink/5 bg-gray-50/50'>
 												<button
 													onClick={() =>
