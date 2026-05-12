@@ -41,30 +41,6 @@ export const Landing: React.FC = () => {
 				{/* Abstract Background Elements */}
 				<div className='absolute inset-0 z-0 overflow-hidden pointer-events-none'>
 					<div className='absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))]from-brand-orange/10 via-brand-cream to-brand-cream'></div>
-
-					<motion.div
-						initial={{ opacity: 0, scale: 0.8 }}
-						animate={{ opacity: 1, scale: 1 }}
-						transition={{
-							duration: 2,
-							repeat: Infinity,
-							repeatType: "reverse",
-							ease: "easeInOut",
-						}}
-						className='absolute top-[20%] left-[15%] w-72 h-72 bg-brand-orange/20 rounded-full blur-[100px]'
-					/>
-					<motion.div
-						initial={{ opacity: 0, scale: 0.8 }}
-						animate={{ opacity: 1, scale: 1 }}
-						transition={{
-							duration: 3,
-							repeat: Infinity,
-							repeatType: "reverse",
-							ease: "easeInOut",
-							delay: 1,
-						}}
-						className='absolute bottom-[20%] right-[15%] w-96 h-96 bg-brand-orange/10 rounded-full blur-[120px]'
-					/>
 				</div>
 
 				<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10'>
