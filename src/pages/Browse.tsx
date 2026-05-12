@@ -7,7 +7,8 @@ import { PageHeader } from "@/src/components/PageHeader";
 import { FilterPills } from "@/src/components/FilterPills";
 import { Pagination } from "@/src/components/Pagination";
 import { LexiconCard } from "@/src/components/LexiconCard";
-import { BrowseEntry } from "@/src/lib/types";
+import { VariantDetailCard } from "@/src/components/VariantDetailCard";
+import { BrowseEntry, LexiconEntry } from "@/src/lib/types";
 import { YORUBA_ALPHABET } from "@/src/lib/constants";
 
 const ITEMS_PER_PAGE = 12; // divisible by 3, 2, and 1 — fits all grid layouts
@@ -21,6 +22,10 @@ export const Browse: React.FC = () => {
 	const [baseWordFilter, setBaseWordFilter] = useState<
 		"all" | "verified" | "multiple"
 	>("all");
+	const [browseTab, setBrowseTab] = useState<"base-words" | "all-words">("base-words");
+	const [allWords, setAllWords] = useState<LexiconEntry[]>([]);
+	const [loadingAllWords, setLoadingAllWords] = useState(true);
+	const [allWordsPage, setAllWordsPage] = useState(1);
 	const [isRestored, setIsRestored] = useState(false);
 	const isInitialRender = useRef(true);
 
@@ -30,12 +35,16 @@ export const Browse: React.FC = () => {
 		const savedLetter = sessionStorage.getItem("browseSelectedLetter");
 		const savedPage = sessionStorage.getItem("browseCurrentPage");
 		const savedFilter = sessionStorage.getItem("browseBaseWordFilter");
+		const savedTab = sessionStorage.getItem("browseTab");
+		const savedAllWordsPage = sessionStorage.getItem("browseAllWordsPage");
 
 		if (savedSearchTerm) setSearchTerm(savedSearchTerm);
 		if (savedLetter) setSelectedLetter(savedLetter);
 		if (savedPage) setCurrentPage(parseInt(savedPage));
 		if (savedFilter)
 			setBaseWordFilter(savedFilter as "all" | "verified" | "multiple");
+		if (savedTab) setBrowseTab(savedTab as "base-words" | "all-words");
+		if (savedAllWordsPage) setAllWordsPage(parseInt(savedAllWordsPage));
 
 		// Mark restoration as complete
 		setIsRestored(true);
@@ -56,12 +65,15 @@ export const Browse: React.FC = () => {
 		sessionStorage.setItem("browseSelectedLetter", selectedLetter);
 		sessionStorage.setItem("browseCurrentPage", currentPage.toString());
 		sessionStorage.setItem("browseBaseWordFilter", baseWordFilter);
-	}, [isRestored, searchTerm, selectedLetter, currentPage, baseWordFilter]);
+		sessionStorage.setItem("browseTab", browseTab);
+		sessionStorage.setItem("browseAllWordsPage", allWordsPage.toString());
+	}, [isRestored, searchTerm, selectedLetter, currentPage, baseWordFilter, browseTab, allWordsPage]);
 
 	useEffect(() => {
 		// Only fetch if we've restored state
 		if (isRestored) {
 			fetchEntries();
+			fetchAllWords();
 		}
 	}, [isRestored, selectedLetter, baseWordFilter]);
 
@@ -73,7 +85,8 @@ export const Browse: React.FC = () => {
 		}
 
 		setCurrentPage(1);
-	}, [isRestored, searchTerm, selectedLetter, baseWordFilter]);
+		setAllWordsPage(1);
+	}, [isRestored, searchTerm, selectedLetter, baseWordFilter, browseTab]);
 
 	const fetchEntries = async () => {
 		setLoading(true);
@@ -140,6 +153,42 @@ export const Browse: React.FC = () => {
 		return matchesSearch && matchesFilter;
 	});
 
+	const fetchAllWords = async () => {
+		setLoadingAllWords(true);
+		let query = supabase
+			.from("lexicon_entries")
+			.select("*, base_word:base_words(syllables), profiles!lexicon_entries_contributor_id_fkey(full_name)")
+			.order("word", { ascending: true });
+
+		if (selectedLetter !== "all") {
+			query = query.ilike("word", `${selectedLetter.toLowerCase()}%`);
+		}
+
+		const { data, error } = await query;
+		if (error) {
+			console.error("Error fetching all words:", error);
+		} else {
+			setAllWords((data as any) || []);
+		}
+		setLoadingAllWords(false);
+	};
+
+	const filteredAllWords = allWords.filter((entry) => {
+		return entry.word.toLowerCase().includes(searchTerm.toLowerCase());
+	});
+
+	const allWordsTotalPages = Math.ceil(filteredAllWords.length / ITEMS_PER_PAGE);
+	const paginatedAllWords = filteredAllWords.slice(
+		(allWordsPage - 1) * ITEMS_PER_PAGE,
+		allWordsPage * ITEMS_PER_PAGE,
+	);
+
+	const handleAllWordsPageChange = (page: number) => {
+		setAllWordsPage(page);
+		sessionStorage.setItem("browseScrollY", "0");
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	};
+
 	const totalPages = Math.ceil(filteredEntries.length / ITEMS_PER_PAGE);
 	const paginatedEntries = filteredEntries.slice(
 		(currentPage - 1) * ITEMS_PER_PAGE,
@@ -163,6 +212,29 @@ export const Browse: React.FC = () => {
 				searchPlaceholder='Search for a word...'
 			/>
 
+			<div className='flex space-x-4 mb-6 border-b border-brand-ink/10 pb-2 mt-8'>
+				<button
+					onClick={() => setBrowseTab("base-words")}
+					className={`pb-2 font-bold cursor-pointer transition-colors ${
+						browseTab === "base-words"
+							? "text-brand-orange border-b-2 border-brand-orange"
+							: "text-brand-ink/40 hover:text-brand-ink"
+					}`}
+				>
+					Base Words
+				</button>
+				<button
+					onClick={() => setBrowseTab("all-words")}
+					className={`pb-2 font-bold cursor-pointer transition-colors ${
+						browseTab === "all-words"
+							? "text-brand-orange border-b-2 border-brand-orange"
+							: "text-brand-ink/40 hover:text-brand-ink"
+					}`}
+				>
+					All Words
+				</button>
+			</div>
+
 			<div className='mb-8'>
 				<h3 className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 mb-3'>
 					Filter by Letter
@@ -180,87 +252,166 @@ export const Browse: React.FC = () => {
 				/>
 			</div>
 
-			<div className='mb-12'>
-				<h3 className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 mb-3'>
-					Filter by Base Word
-				</h3>
-				<FilterPills
-					items={[
-						{ key: "all", label: "All Words" },
-						{ key: "verified", label: "Has Verified Variants" },
-						{ key: "multiple", label: "Multiple Variants" },
-					]}
-					value={baseWordFilter}
-					onChange={(value) => setBaseWordFilter(value as any)}
-				/>
-			</div>
-
-			{!loading && filteredEntries.length > 0 && (
-				<div className='mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2'>
-					<p className='text-sm text-brand-ink/40 font-medium'>
-						Showing{" "}
-						<span className='text-brand-ink/70 font-bold'>
-							{filteredEntries.length > 0
-								? (currentPage - 1) * ITEMS_PER_PAGE + 1
-								: 0}
-							–
-							{Math.min(
-								currentPage * ITEMS_PER_PAGE,
-								filteredEntries.length,
-							)}
-						</span>{" "}
-						of{" "}
-						<span className='text-brand-ink/70 font-bold'>
-							{filteredEntries.length}
-						</span>{" "}
-						{filteredEntries.length === 1 ? "entry" : "entries"}
-					</p>
-					<p className='text-sm text-brand-ink/40'>
-						Page {currentPage} of {totalPages}
-					</p>
+			{browseTab === "base-words" && (
+				<div className='mb-12'>
+					<h3 className='text-xs font-bold uppercase tracking-widest text-brand-ink/40 mb-3'>
+						Filter by Base Word
+					</h3>
+					<FilterPills
+						items={[
+							{ key: "all", label: "All Words" },
+							{ key: "verified", label: "Has Verified Variants" },
+							{ key: "multiple", label: "Multiple Variants" },
+						]}
+						value={baseWordFilter}
+						onChange={(value) => setBaseWordFilter(value as any)}
+					/>
 				</div>
 			)}
 
-			<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
-				<AnimatePresence mode='popLayout'>
-					{loading ? (
-						Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
-							<div
-								key={i}
-								className='h-64 rounded-2xl bg-white/30 animate-pulse border border-brand-ink/5'
-							/>
-						))
-					) : paginatedEntries.length > 0 ? (
-						paginatedEntries.map((entry, index) => (
-							<motion.div
-								key={entry.id}
-								layout
-								initial={{ opacity: 0, y: 16 }}
-								animate={{ opacity: 1, y: 0 }}
-								exit={{ opacity: 0, scale: 0.9 }}
-								transition={{ duration: 0.2, delay: index * 0.03 }}
-							>
-								<LexiconCard entry={entry} />
-							</motion.div>
-						))
-					) : (
-						<div className='col-span-full py-24 text-center'>
-							<h3 className='text-2xl font-serif font-bold mb-2'>
-								No entries found
-							</h3>
-							<p className='text-brand-ink/60'>
-								Try adjusting your search or filter criteria.
+			{browseTab === "base-words" ? (
+				<>
+					{!loading && filteredEntries.length > 0 && (
+						<div className='mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2'>
+							<p className='text-sm text-brand-ink/40 font-medium'>
+								Showing{" "}
+								<span className='text-brand-ink/70 font-bold'>
+									{filteredEntries.length > 0
+										? (currentPage - 1) * ITEMS_PER_PAGE + 1
+										: 0}
+									–
+									{Math.min(
+										currentPage * ITEMS_PER_PAGE,
+										filteredEntries.length,
+									)}
+								</span>{" "}
+								of{" "}
+								<span className='text-brand-ink/70 font-bold'>
+									{filteredEntries.length}
+								</span>{" "}
+								{filteredEntries.length === 1 ? "entry" : "entries"}
+							</p>
+							<p className='text-sm text-brand-ink/40'>
+								Page {currentPage} of {totalPages}
 							</p>
 						</div>
 					)}
-				</AnimatePresence>
-			</div>
 
-			<Pagination
-				currentPage={currentPage}
-				totalPages={totalPages}
-				onPageChange={handlePageChange}
-			/>
+					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
+						<AnimatePresence mode='popLayout'>
+							{loading ? (
+								Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
+									<div
+										key={i}
+										className='h-64 rounded-2xl bg-white/30 animate-pulse border border-brand-ink/5'
+									/>
+								))
+							) : paginatedEntries.length > 0 ? (
+								paginatedEntries.map((entry, index) => (
+									<motion.div
+										key={entry.id}
+										layout
+										initial={{ opacity: 0, y: 16 }}
+										animate={{ opacity: 1, y: 0 }}
+										exit={{ opacity: 0, scale: 0.9 }}
+										transition={{ duration: 0.2, delay: index * 0.03 }}
+									>
+										<LexiconCard entry={entry} />
+									</motion.div>
+								))
+							) : (
+								<div className='col-span-full py-24 text-center'>
+									<h3 className='text-2xl font-serif font-bold mb-2'>
+										No entries found
+									</h3>
+									<p className='text-brand-ink/60'>
+										Try adjusting your search or filter criteria.
+									</p>
+								</div>
+							)}
+						</AnimatePresence>
+					</div>
+
+					<Pagination
+						currentPage={currentPage}
+						totalPages={totalPages}
+						onPageChange={handlePageChange}
+					/>
+				</>
+			) : (
+				<>
+					{!loadingAllWords && filteredAllWords.length > 0 && (
+						<div className='mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2'>
+							<p className='text-sm text-brand-ink/40 font-medium'>
+								Showing{" "}
+								<span className='text-brand-ink/70 font-bold'>
+									{filteredAllWords.length > 0
+										? (allWordsPage - 1) * ITEMS_PER_PAGE + 1
+										: 0}
+									–
+									{Math.min(
+										allWordsPage * ITEMS_PER_PAGE,
+										filteredAllWords.length,
+									)}
+								</span>{" "}
+								of{" "}
+								<span className='text-brand-ink/70 font-bold'>
+									{filteredAllWords.length}
+								</span>{" "}
+								{filteredAllWords.length === 1 ? "word" : "words"}
+							</p>
+							<p className='text-sm text-brand-ink/40'>
+								Page {allWordsPage} of {allWordsTotalPages}
+							</p>
+						</div>
+					)}
+
+					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
+						<AnimatePresence mode='popLayout'>
+							{loadingAllWords ? (
+								Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
+									<div
+										key={i}
+										className='h-64 rounded-2xl bg-white/30 animate-pulse border border-brand-ink/5'
+									/>
+								))
+							) : paginatedAllWords.length > 0 ? (
+								paginatedAllWords.map((variant, index) => (
+									<motion.div
+										key={variant.id}
+										layout
+										initial={{ opacity: 0, y: 16 }}
+										animate={{ opacity: 1, y: 0 }}
+										exit={{ opacity: 0, scale: 0.9 }}
+										transition={{ duration: 0.2, delay: index * 0.03 }}
+										className="h-full"
+									>
+										<VariantDetailCard
+											variant={variant}
+											baseWordSyllables={variant.base_word?.syllables ?? undefined}
+										/>
+									</motion.div>
+								))
+							) : (
+								<div className='col-span-full py-24 text-center'>
+									<h3 className='text-2xl font-serif font-bold mb-2'>
+										No words found
+									</h3>
+									<p className='text-brand-ink/60'>
+										Try adjusting your search or filter criteria.
+									</p>
+								</div>
+							)}
+						</AnimatePresence>
+					</div>
+
+					<Pagination
+						currentPage={allWordsPage}
+						totalPages={allWordsTotalPages}
+						onPageChange={handleAllWordsPageChange}
+					/>
+				</>
+			)}
 		</div>
 	);
 };
