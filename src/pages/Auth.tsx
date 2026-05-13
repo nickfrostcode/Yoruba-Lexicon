@@ -111,7 +111,9 @@ export const Auth: React.FC = () => {
 											placeholder='Olúwaṣeun Adébáyọ̀'
 											className='input-field pl-12'
 											value={fullName}
-											onChange={(e) => setFullName(e.target.value)}
+											onChange={(e) =>
+												setFullName(e.target.value.trim())
+											}
 											required={!isLogin}
 										/>
 									</div>
@@ -130,7 +132,9 @@ export const Auth: React.FC = () => {
 											placeholder='seun_lexicon'
 											className='input-field pl-12'
 											value={username}
-											onChange={(e) => setUsername(e.target.value)}
+											onChange={(e) =>
+												setUsername(e.target.value.trim())
+											}
 											required={!isLogin}
 										/>
 									</div>
@@ -152,7 +156,7 @@ export const Auth: React.FC = () => {
 									placeholder='seun@lexicon.org'
 									className='input-field pl-12'
 									value={email}
-									onChange={(e) => setEmail(e.target.value)}
+									onChange={(e) => setEmail(e.target.value.trim())}
 									required
 								/>
 							</div>

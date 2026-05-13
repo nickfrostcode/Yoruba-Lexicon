@@ -208,7 +208,7 @@ export const DashboardVariantForm: React.FC<DashboardVariantFormProps> = ({
 									onChange={(e) =>
 										setFormData({
 											...formData,
-											word: e.target.value.normalize("NFC"),
+											word: e.target.value.normalize("NFC").trim(),
 										})
 									}
 									required
@@ -226,13 +226,13 @@ export const DashboardVariantForm: React.FC<DashboardVariantFormProps> = ({
 									type='text'
 									className='input-field'
 									placeholder='e.g. m-d-r'
-									pattern='^(d|r|m)(-(d|r|m))*$'
+									pattern='^[drm](-[drm])*$'
 									title='Only use d, r, m and hyphens (e.g. m-d-r)'
 									value={formData.phonetic}
 									onChange={(e) =>
 										setFormData({
 											...formData,
-											phonetic: e.target.value.normalize("NFC"),
+											phonetic: e.target.value.normalize("NFC").trim(),
 										})
 									}
 								/>

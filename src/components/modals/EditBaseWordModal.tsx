@@ -118,7 +118,7 @@ export const EditBaseWordModal: React.FC<EditBaseWordModalProps> = ({
 								type='text'
 								className='input-field'
 								value={word}
-								onChange={(e) => setWord(e.target.value.normalize("NFC"))}
+								onChange={(e) => setWord(e.target.value.normalize("NFC").trim())}
 								required
 							/>
 							<YorubaKeyboard
@@ -136,7 +136,7 @@ export const EditBaseWordModal: React.FC<EditBaseWordModalProps> = ({
 								min='1'
 								className='input-field'
 								value={syllables}
-								onChange={(e) => setSyllables(e.target.value)}
+								onChange={(e) => setSyllables(e.target.value.trim())}
 								required
 							/>
 						</div>
@@ -149,7 +149,7 @@ export const EditBaseWordModal: React.FC<EditBaseWordModalProps> = ({
 								rows={2}
 								className='input-field py-3'
 								value={note}
-								onChange={(e) => setNote(e.target.value)}
+								onChange={(e) => setNote(e.target.value.trim())}
 							/>
 						</div>
 					</div>

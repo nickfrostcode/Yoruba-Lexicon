@@ -72,7 +72,7 @@ export const DashboardBaseWordForm: React.FC<DashboardBaseWordFormProps> = ({
 						value={baseWordInput}
 						onChange={(e) =>
 							setBaseWordInput(
-								e.target.value.normalize("NFC"),
+								e.target.value.normalize("NFC").trim(),
 							)
 						}
 						required
@@ -97,7 +97,7 @@ export const DashboardBaseWordForm: React.FC<DashboardBaseWordFormProps> = ({
 						placeholder='e.g. 3'
 						value={baseWordSyllables}
 						onChange={(e) =>
-							setBaseWordSyllables(e.target.value)
+							setBaseWordSyllables(e.target.value.trim())
 						}
 						required
 					/>

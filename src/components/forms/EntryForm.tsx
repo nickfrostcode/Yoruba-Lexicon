@@ -42,7 +42,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({
 						className='input-field'
 						placeholder='e.g. Olùkọ́'
 						value={entry.word}
-						onChange={(e) => updateField("word", e.target.value.normalize("NFC"))}
+						onChange={(e) => updateField("word", e.target.value.normalize("NFC").trim())}
 						required
 					/>
 				</div>
@@ -89,10 +89,10 @@ export const EntryForm: React.FC<EntryFormProps> = ({
 						type='text'
 						className='input-field'
 						placeholder='e.g. m-d-r'
-						pattern="^(d|r|m)(-(d|r|m))*$"
+						pattern="^[drm](-[drm])*$"
 						title="Only use d, r, m and hyphens (e.g. m-d-r)"
 						value={entry.phonetic}
-						onChange={(e) => updateField("phonetic", e.target.value.normalize("NFC"))}
+						onChange={(e) => updateField("phonetic", e.target.value.normalize("NFC").trim())}
 					/>
 				</div>
 
@@ -106,7 +106,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({
 						placeholder='e.g. Òlùkọ̀ mi dùn'
 						value={entry.example_yoruba}
 						onChange={(e) =>
-							updateField("example_yoruba", e.target.value.normalize("NFC"))
+							updateField("example_yoruba", e.target.value.normalize("NFC").trim())
 						}
 					/>
 				</div>
@@ -121,7 +121,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({
 						placeholder='e.g. My teacher is nice'
 						value={entry.example_english}
 						onChange={(e) =>
-							updateField("example_english", e.target.value.normalize("NFC"))
+							updateField("example_english", e.target.value.normalize("NFC").trim())
 						}
 					/>
 				</div>

@@ -40,7 +40,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 						placeholder={searchPlaceholder}
 						className='input-field pl-12'
 						value={searchValue}
-						onChange={(e) => onSearchChange(e.target.value)}
+						onChange={(e) => onSearchChange(e.target.value.normalize("NFC").trim())}
 					/>
 				</div>
 			) : (
