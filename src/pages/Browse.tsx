@@ -2,12 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/src/lib/supabase";
-import { motion, AnimatePresence } from "motion/react";
-import { PageHeader } from "@/src/components/PageHeader";
-import { FilterPills } from "@/src/components/FilterPills";
-import { Pagination } from "@/src/components/Pagination";
-import { LexiconCard } from "@/src/components/LexiconCard";
-import { VariantDetailCard } from "@/src/components/VariantDetailCard";
+import { PageHeader } from "@/src/components/layout/PageHeader";
+import { FilterPills } from "@/src/components/ui/FilterPills";
+import { BrowseBaseWords } from "@/src/components/browse/BrowseBaseWords";
+import { BrowseAllWords } from "@/src/components/browse/BrowseAllWords";
 import { BrowseEntry, LexiconEntry } from "@/src/lib/types";
 import { YORUBA_ALPHABET } from "@/src/lib/constants";
 
@@ -178,10 +176,6 @@ export const Browse: React.FC = () => {
 	});
 
 	const allWordsTotalPages = Math.ceil(filteredAllWords.length / ITEMS_PER_PAGE);
-	const paginatedAllWords = filteredAllWords.slice(
-		(allWordsPage - 1) * ITEMS_PER_PAGE,
-		allWordsPage * ITEMS_PER_PAGE,
-	);
 
 	const handleAllWordsPageChange = (page: number) => {
 		setAllWordsPage(page);
@@ -190,10 +184,6 @@ export const Browse: React.FC = () => {
 	};
 
 	const totalPages = Math.ceil(filteredEntries.length / ITEMS_PER_PAGE);
-	const paginatedEntries = filteredEntries.slice(
-		(currentPage - 1) * ITEMS_PER_PAGE,
-		currentPage * ITEMS_PER_PAGE,
-	);
 
 	const handlePageChange = (page: number) => {
 		setCurrentPage(page);
@@ -270,147 +260,23 @@ export const Browse: React.FC = () => {
 			)}
 
 			{browseTab === "base-words" ? (
-				<>
-					{!loading && filteredEntries.length > 0 && (
-						<div className='mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2'>
-							<p className='text-sm text-brand-ink/40 font-medium'>
-								Showing{" "}
-								<span className='text-brand-ink/70 font-bold'>
-									{filteredEntries.length > 0
-										? (currentPage - 1) * ITEMS_PER_PAGE + 1
-										: 0}
-									–
-									{Math.min(
-										currentPage * ITEMS_PER_PAGE,
-										filteredEntries.length,
-									)}
-								</span>{" "}
-								of{" "}
-								<span className='text-brand-ink/70 font-bold'>
-									{filteredEntries.length}
-								</span>{" "}
-								{filteredEntries.length === 1 ? "entry" : "entries"}
-							</p>
-							<p className='text-sm text-brand-ink/40'>
-								Page {currentPage} of {totalPages}
-							</p>
-						</div>
-					)}
-
-					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
-						<AnimatePresence mode='popLayout'>
-							{loading ? (
-								Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
-									<div
-										key={i}
-										className='h-64 rounded-2xl bg-white/30 animate-pulse border border-brand-ink/5'
-									/>
-								))
-							) : paginatedEntries.length > 0 ? (
-								paginatedEntries.map((entry, index) => (
-									<motion.div
-										key={entry.id}
-										layout
-										initial={{ opacity: 0, y: 16 }}
-										animate={{ opacity: 1, y: 0 }}
-										exit={{ opacity: 0, scale: 0.9 }}
-										transition={{ duration: 0.2, delay: index * 0.03 }}
-									>
-										<LexiconCard entry={entry} />
-									</motion.div>
-								))
-							) : (
-								<div className='col-span-full py-24 text-center'>
-									<h3 className='text-2xl font-serif font-bold mb-2'>
-										No entries found
-									</h3>
-									<p className='text-brand-ink/60'>
-										Try adjusting your search or filter criteria.
-									</p>
-								</div>
-							)}
-						</AnimatePresence>
-					</div>
-
-					<Pagination
-						currentPage={currentPage}
-						totalPages={totalPages}
-						onPageChange={handlePageChange}
-					/>
-				</>
+				<BrowseBaseWords
+					entries={filteredEntries}
+					loading={loading}
+					currentPage={currentPage}
+					totalPages={totalPages}
+					itemsPerPage={ITEMS_PER_PAGE}
+					onPageChange={handlePageChange}
+				/>
 			) : (
-				<>
-					{!loadingAllWords && filteredAllWords.length > 0 && (
-						<div className='mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2'>
-							<p className='text-sm text-brand-ink/40 font-medium'>
-								Showing{" "}
-								<span className='text-brand-ink/70 font-bold'>
-									{filteredAllWords.length > 0
-										? (allWordsPage - 1) * ITEMS_PER_PAGE + 1
-										: 0}
-									–
-									{Math.min(
-										allWordsPage * ITEMS_PER_PAGE,
-										filteredAllWords.length,
-									)}
-								</span>{" "}
-								of{" "}
-								<span className='text-brand-ink/70 font-bold'>
-									{filteredAllWords.length}
-								</span>{" "}
-								{filteredAllWords.length === 1 ? "word" : "words"}
-							</p>
-							<p className='text-sm text-brand-ink/40'>
-								Page {allWordsPage} of {allWordsTotalPages}
-							</p>
-						</div>
-					)}
-
-					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
-						<AnimatePresence mode='popLayout'>
-							{loadingAllWords ? (
-								Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
-									<div
-										key={i}
-										className='h-64 rounded-2xl bg-white/30 animate-pulse border border-brand-ink/5'
-									/>
-								))
-							) : paginatedAllWords.length > 0 ? (
-								paginatedAllWords.map((variant, index) => (
-									<motion.div
-										key={variant.id}
-										layout
-										initial={{ opacity: 0, y: 16 }}
-										animate={{ opacity: 1, y: 0 }}
-										exit={{ opacity: 0, scale: 0.9 }}
-										transition={{ duration: 0.2, delay: index * 0.03 }}
-										className="h-full"
-									>
-										<VariantDetailCard
-											variant={variant}
-											baseWordSyllables={variant.base_word?.syllables ?? undefined}
-										/>
-									</motion.div>
-								))
-							) : (
-								<div className='col-span-full py-24 text-center'>
-									<h3 className='text-2xl font-serif font-bold mb-2'>
-										No words found
-									</h3>
-									<p className='text-brand-ink/60'>
-										Try adjusting your search or filter criteria.
-									</p>
-								</div>
-							)}
-						</AnimatePresence>
-					</div>
-
-					<Pagination
-						currentPage={allWordsPage}
-						totalPages={allWordsTotalPages}
-						onPageChange={handleAllWordsPageChange}
-					/>
-				</>
+				<BrowseAllWords
+					words={filteredAllWords}
+					loading={loadingAllWords}
+					currentPage={allWordsPage}
+					totalPages={allWordsTotalPages}
+					itemsPerPage={ITEMS_PER_PAGE}
+					onPageChange={handleAllWordsPageChange}
+				/>
 			)}
 		</div>
 	);

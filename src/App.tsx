@@ -7,7 +7,7 @@ import {
 	Route,
 	Navigate,
 } from "react-router-dom";
-import { Layout } from "@/src/components/Layout";
+import { Layout } from "@/src/components/layout/Layout";
 import { Landing } from "@/src/pages/Landing";
 import { Browse } from "@/src/pages/Browse";
 import { BaseWordDetail } from "@/src/pages/BaseWordDetail";
@@ -18,7 +18,7 @@ import { Contributors } from "@/src/pages/Contributors";
 import { AuthProvider } from "@/src/context/AuthContext";
 import { ProtectedRoute } from "@/src/lib/ProtectedRoute";
 import { AdminRoute } from "@/src/lib/AdminRoute";
-import { ScrollToTop } from "@/src/components/ScrollToTop";
+import { ScrollToTop } from "@/src/components/layout/ScrollToTop";
 
 export default function App() {
 	return (

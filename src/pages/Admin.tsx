@@ -4,22 +4,17 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/src/lib/supabase";
 import {
 	ShieldCheck,
-	CheckCircle,
-	Clock,
 	LayoutDashboard,
 	BookA,
 	Layers,
-	Edit3,
-	Trash2,
-	ChevronDown,
 } from "lucide-react";
-import { motion } from "motion/react";
 import { toast } from "sonner";
 import { BaseWord, LexiconEntry } from "@/src/lib/types";
-import { AdminLexiconCard } from "@/src/components/AdminLexiconCard";
-import { EditVariantModal } from "@/src/components/EditVariantModal";
-import { EditBaseWordModal } from "@/src/components/EditBaseWordModal";
-import { Loader } from "@/src/components/Loader";
+import { EditVariantModal } from "@/src/components/modals/EditVariantModal";
+import { EditBaseWordModal } from "@/src/components/modals/EditBaseWordModal";
+import { AdminOverview } from "@/src/components/admin/AdminOverview";
+import { AdminBaseWords } from "@/src/components/admin/AdminBaseWords";
+import { AdminVariants } from "@/src/components/admin/AdminVariants";
 
 const LOAD_MORE_COUNT = 20;
 
@@ -307,271 +302,44 @@ export const Admin = () => {
 				{/* Main Content Area */}
 				<div className='md:col-span-3'>
 					{activeTab === "overview" && (
-						<motion.div
-							initial={{ opacity: 0, y: 10 }}
-							animate={{ opacity: 1, y: 0 }}
-							className='space-y-8'
-						>
-							<div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>
-								<div className='glass-card p-6 rounded-2xl border border-brand-ink/5 bg-brand-orange text-white'>
-									<div className='flex flex-col items-center justify-center text-center'>
-										<BookA size={32} className='mb-2 opacity-80' />
-										<span className='text-4xl font-bold font-serif mb-1'>
-											{stats.totalBaseWords}
-										</span>
-										<span className='text-sm font-bold uppercase tracking-widest opacity-80'>
-											Total Base Words
-										</span>
-									</div>
-								</div>
-								<div className='glass-card p-6 rounded-2xl border border-brand-ink/5'>
-									<div className='flex flex-col items-center justify-center text-center'>
-										<Layers
-											size={32}
-											className='mb-2 text-brand-orange/80'
-										/>
-										<span className='text-4xl font-bold font-serif mb-1'>
-											{stats.totalVariants}
-										</span>
-										<span className='text-sm font-bold uppercase tracking-widest text-brand-ink/40'>
-											Total Variants
-										</span>
-									</div>
-								</div>
-							</div>
-
-							<div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>
-								<div className='glass-card p-6 rounded-2xl border border-brand-ink/5'>
-									<div className='flex flex-col items-center justify-center text-center'>
-										<CheckCircle
-											size={24}
-											className='text-green-500 mb-2'
-										/>
-										<span className='text-3xl font-bold font-serif mb-1 text-green-500'>
-											{stats.verifiedVariants}
-										</span>
-										<span className='text-xs font-bold uppercase tracking-widest text-brand-ink/40'>
-											Verified Variants
-										</span>
-									</div>
-								</div>
-								<div className='glass-card p-6 rounded-2xl border border-brand-ink/5'>
-									<div className='flex flex-col items-center justify-center text-center'>
-										<Clock
-											size={24}
-											className='text-brand-orange mb-2'
-										/>
-										<span className='text-3xl font-bold font-serif mb-1 text-brand-orange'>
-											{stats.unverifiedVariants}
-										</span>
-										<span className='text-xs font-bold uppercase tracking-widest text-brand-ink/40'>
-											Unverified Variants
-										</span>
-									</div>
-								</div>
-							</div>
-						</motion.div>
+						<AdminOverview stats={stats} />
 					)}
 
 					{activeTab === "base-words" && (
-						<motion.div
-							initial={{ opacity: 0, y: 10 }}
-							animate={{ opacity: 1, y: 0 }}
-							className='space-y-6'
-						>
-							<div className='flex justify-between items-center mb-6 flex-wrap gap-4'>
-								<h2 className='text-3xl font-serif font-bold'>
-									Manage Base Words
-								</h2>
-								<div className='flex gap-3'>
-									<select
-										className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
-										style={{ width: "auto" }}
-										value={baseWordsFilter}
-										onChange={(e) => {
-											setBaseWordsFilter(e.target.value);
-											setVisibleBaseWords(LOAD_MORE_COUNT);
-										}}
-									>
-										<option value='all'>All Letters</option>
-										{availableAlphabets.map((letter) => (
-											<option key={letter} value={letter}>
-												Letter {letter.toUpperCase()}
-											</option>
-										))}
-									</select>
-									<select
-										className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
-										style={{ width: "auto" }}
-										value={baseWordsSortBy}
-										onChange={(e) => {
-											setBaseWordsSortBy(e.target.value as any);
-											setVisibleBaseWords(LOAD_MORE_COUNT);
-										}}
-									>
-										<option value='date-down'>Newest First</option>
-										<option value='date-up'>Oldest First</option>
-										<option value='a-z'>A - Z</option>
-										<option value='z-a'>Z - A</option>
-									</select>
-								</div>
-							</div>
-							<div className='bg-white rounded-2xl border border-brand-ink/5 overflow-hidden'>
-								{loadingBaseWords ? (
-									<Loader text='Loading base words...' />
-								) : baseWords.length > 0 ? (
-									<div className='flex flex-col'>
-										<ul className='divide-y divide-brand-ink/5 max-h-[60vh] overflow-y-auto'>
-											{getSortedAndFilteredBaseWords()
-												.slice(0, visibleBaseWords)
-												.map((bw) => (
-													<li
-														key={bw.id}
-														className='p-4 flex justify-between items-center group'
-													>
-														<div>
-															<span className='font-serif font-bold text-lg'>
-																{bw.word} &ensp;
-															</span>
-															<span className='text-sm text-brand-ink/40 truncate max-w-50'>
-																{bw.profiles?.full_name
-																	? `${bw.syllables ?? "N/A"} syllables •
-                                                   by ${bw.profiles.full_name}`
-																	: `${bw.syllables ?? "N/A"} syllables`}
-															</span>
-															{bw.note && (
-																<p className='text-xs text-brand-ink/40 line-clamp-1'>
-																	{bw.note}
-																</p>
-															)}
-														</div>
-														<div className='flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
-															<button
-																className='text-brand-ink/40 hover:text-brand-orange cursor-pointer'
-																onClick={() =>
-																	setEditingBaseWordId(bw.id)
-																}
-															>
-																<Edit3 size={18} />
-															</button>
-															<button
-																className='text-brand-ink/40 hover:text-red-500 cursor-pointer'
-																onClick={() =>
-																	handleDeleteBaseWord(bw.id)
-																}
-															>
-																<Trash2 size={18} />
-															</button>
-														</div>
-													</li>
-												))}
-										</ul>
-										{visibleBaseWords < getSortedAndFilteredBaseWords().length && (
-											<div className='p-4 border-t border-brand-ink/5 bg-gray-50/50'>
-												<button
-													onClick={() =>
-														setVisibleBaseWords(
-															(prev) => prev + LOAD_MORE_COUNT,
-														)
-													}
-													className='w-full py-2 flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-widest text-brand-orange hover:bg-brand-orange/5 rounded-xl transition-colors cursor-pointer'
-												>
-													<ChevronDown size={16} /> Load More
-												</button>
-											</div>
-										)}
-									</div>
-								) : (
-									<div className='py-12 text-center text-brand-ink/40'>
-										No base words found.
-									</div>
-								)}
-							</div>
-						</motion.div>
+						<AdminBaseWords
+							loadingBaseWords={loadingBaseWords}
+							baseWords={baseWords}
+							baseWordsFilter={baseWordsFilter}
+							setBaseWordsFilter={setBaseWordsFilter}
+							availableAlphabets={availableAlphabets}
+							baseWordsSortBy={baseWordsSortBy}
+							setBaseWordsSortBy={setBaseWordsSortBy}
+							getSortedAndFilteredBaseWords={getSortedAndFilteredBaseWords}
+							visibleBaseWords={visibleBaseWords}
+							setVisibleBaseWords={setVisibleBaseWords}
+							LOAD_MORE_COUNT={LOAD_MORE_COUNT}
+							setEditingBaseWordId={setEditingBaseWordId}
+							handleDeleteBaseWord={handleDeleteBaseWord}
+						/>
 					)}
 
 					{activeTab === "variants" && (
-						<motion.div
-							initial={{ opacity: 0, y: 10 }}
-							animate={{ opacity: 1, y: 0 }}
-						>
-							<div className='flex justify-between items-center mb-6 flex-wrap gap-4'>
-								<h2 className='text-3xl font-serif font-bold'>
-									Manage Variants
-								</h2>
-								<div className='flex gap-3'>
-									<select
-										className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
-										style={{ width: "auto" }}
-										value={variantsFilter}
-										onChange={(e) => {
-											setVariantsFilter(e.target.value as any);
-											setVisibleVariants(LOAD_MORE_COUNT);
-										}}
-									>
-										<option value='all'>All Variants</option>
-										<option value='verified'>Verified</option>
-										<option value='unverified'>Unverified</option>
-									</select>
-									<select
-										className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
-										style={{ width: "auto" }}
-										value={variantsSortBy}
-										onChange={(e) => {
-											setVariantsSortBy(e.target.value as any);
-											setVisibleVariants(LOAD_MORE_COUNT);
-										}}
-									>
-										<option value='date-down'>Newest First</option>
-										<option value='date-up'>Oldest First</option>
-										<option value='a-z'>A - Z</option>
-										<option value='z-a'>Z - A</option>
-									</select>
-								</div>
-							</div>
-							{loadingVariants ? (
-								<Loader text='Loading variants...' />
-							) : (
-								<div className='flex flex-col'>
-									<div className='grid grid-cols-1 xl:grid-cols-2 gap-6'>
-										{getSortedAndFilteredVariants()
-											.slice(0, visibleVariants)
-											.map((entry) => (
-												<motion.div
-													key={entry.id}
-													initial={{ opacity: 0, scale: 0.95 }}
-													animate={{ opacity: 1, scale: 1 }}
-													transition={{ delay: 1 * 0.1 }}
-												>
-													<AdminLexiconCard
-														key={entry.id}
-														entry={entry}
-														onApprove={handleApprove}
-														onUnverify={handleUnverify}
-														onEdit={() =>
-															setEditingVariantId(entry.id)
-														}
-														onDelete={handleDeleteVariant}
-													/>
-												</motion.div>
-											))}
-									</div>
-									{visibleVariants <
-										getSortedAndFilteredVariants().length && (
-										<button
-											onClick={() =>
-												setVisibleVariants(
-													(prev) => prev + LOAD_MORE_COUNT,
-												)
-											}
-											className='w-full mt-6 py-4 flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-widest text-brand-orange hover:bg-brand-orange/5 rounded-xl transition-colors cursor-pointer'
-										>
-											<ChevronDown size={16} /> Load More
-										</button>
-									)}
-								</div>
-							)}
-						</motion.div>
+						<AdminVariants
+							loadingVariants={loadingVariants}
+							variants={variants}
+							variantsFilter={variantsFilter}
+							setVariantsFilter={setVariantsFilter}
+							variantsSortBy={variantsSortBy}
+							setVariantsSortBy={setVariantsSortBy}
+							getSortedAndFilteredVariants={getSortedAndFilteredVariants}
+							visibleVariants={visibleVariants}
+							setVisibleVariants={setVisibleVariants}
+							LOAD_MORE_COUNT={LOAD_MORE_COUNT}
+							handleApprove={handleApprove}
+							handleUnverify={handleUnverify}
+							setEditingVariantId={setEditingVariantId}
+							handleDeleteVariant={handleDeleteVariant}
+						/>
 					)}
 				</div>
 			</div>

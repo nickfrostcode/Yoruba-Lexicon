@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, FormEvent } from "react";
 import { supabase } from "@/src/lib/supabase";
-import { Modal } from "@/src/components/Modal";
+import { Modal } from "@/src/components/modals/Modal";
 import { toast } from "sonner";
 import { Loader2, Save } from "lucide-react";
-import { Loader } from "@/src/components/Loader";
+import { Loader } from "@/src/components/ui/Loader";
 import { normalizeWord, getAlphabetChar } from "@/src/lib/utils";
 
-import { YorubaKeyboard } from "@/src/components/YorubaKeyboard";
+import { YorubaKeyboard } from "@/src/components/forms/YorubaKeyboard";
 
 type BaseWordRow = {
 	word: string;
