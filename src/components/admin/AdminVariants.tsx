@@ -1,3 +1,5 @@
+/** @format */
+
 import { motion } from "motion/react";
 import { ChevronDown } from "lucide-react";
 import { Loader } from "@/src/components/ui/Loader";
@@ -46,16 +48,16 @@ export const AdminVariants: React.FC<AdminVariantsProps> = ({
 			className='space-y-6'
 		>
 			<div className='flex justify-between items-center mb-6 flex-wrap gap-4'>
-				<h2 className='text-3xl font-serif font-bold'>
-					Manage Variants
-				</h2>
+				<h2 className='text-3xl font-serif font-bold'>Manage Variants</h2>
 				<div className='flex gap-3'>
 					<select
 						className='input-field appearance-none cursor-pointer text-sm py-2 px-4 bg-white border border-brand-ink/10 rounded-xl'
 						style={{ width: "auto" }}
 						value={variantsFilter}
 						onChange={(e) => {
-							setVariantsFilter(e.target.value as "unverified" | "verified" | "all");
+							setVariantsFilter(
+								e.target.value as "unverified" | "verified" | "all",
+							);
 							setVisibleVariants(LOAD_MORE_COUNT);
 						}}
 					>
@@ -83,10 +85,14 @@ export const AdminVariants: React.FC<AdminVariantsProps> = ({
 				<Loader text='Loading variants...' />
 			) : variants.length > 0 ? (
 				<>
-					<div className='grid grid-cols-1 gap-6'>
-						{filteredVariants
-							.slice(0, visibleVariants)
-							.map((variant) => (
+					<div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+						{filteredVariants.slice(0, visibleVariants).map((variant) => (
+							<motion.div
+								key={variant.id}
+								initial={{ opacity: 0, scale: 0.95 }}
+								animate={{ opacity: 1, scale: 1 }}
+								transition={{ delay: 0.2 }}
+							>
 								<AdminLexiconCard
 									key={variant.id}
 									entry={variant}
@@ -95,7 +101,8 @@ export const AdminVariants: React.FC<AdminVariantsProps> = ({
 									onEdit={() => setEditingVariantId(variant.id)}
 									onDelete={handleDeleteVariant}
 								/>
-							))}
+							</motion.div>
+						))}
 					</div>
 					{visibleVariants < filteredVariants.length && (
 						<div className='flex justify-center mt-8'>
