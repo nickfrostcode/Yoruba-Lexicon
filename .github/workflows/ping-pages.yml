@@ -1,0 +1,29 @@
+# @format
+
+name: Keep Pages Alive
+
+on:
+   schedule:
+      - cron: "0 0 */5 * *"
+   workflow_dispatch: {}
+
+jobs:
+   ping-pages:
+      runs-on: ubuntu-latest
+      name: Ping deployed pages
+      steps:
+         - name: Validate target URL
+           run: |
+              if [ -z "${PAGES_URL}" ]; then
+                echo "Error: PAGES_URL secret is not set."
+                exit 1
+              fi
+              echo "Pinging $PAGES_URL"
+           env:
+              PAGES_URL: ${{ secrets.PAGES_URL }}
+
+         - name: Ping deployed pages
+           run: |
+              curl --fail --silent --show-error --location "$PAGES_URL" > /dev/null
+           env:
+              PAGES_URL: ${{ secrets.PAGES_URL }}
