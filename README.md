@@ -1,11 +1,5 @@
 <div align="center">
 
-# Yorùbá Lexicon
-
-A comprehensive web application for exploring, contributing, and managing a Yorùbá dictionary.
-
-</div>
-
 ## Overview
 
 Yorùbá Lexicon is a full-stack web application designed to help users browse Yorùbá words, view their phonetic transcriptions, definitions, and examples in both Yorùbá and English. The platform also allows authenticated users to contribute new entries, which administrators can review, approve, or manage.
@@ -55,7 +49,6 @@ Yorùbá Lexicon is a full-stack web application designed to help users browse Y
    ```env
    VITE_SUPABASE_URL=your_supabase_project_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   GEMINI_API_KEY=your_gemini_api_key_if_applicable
    ```
 4. **Database Configuration:**
    For a detailed guide on setting up the Supabase database schema, policies, and creating an admin user, please refer to the [Supabase Setup Guide](README_SUPABASE.md).
