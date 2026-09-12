@@ -8,22 +8,26 @@ on:
    workflow_dispatch: {}
 
 jobs:
-   ping-pages:
+   ping-supabase:
       runs-on: ubuntu-latest
-      name: Ping deployed pages
+      name: Ping Supabase API
       steps:
-         - name: Validate target URL
+         - name: Validate Supabase Secrets
            run: |
-              if [ -z "${PAGES_URL}" ]; then
-                echo "Error: PAGES_URL secret is not set."
+              if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+                echo "Error: SUPABASE_URL and/or SUPABASE_ANON_KEY secrets are not set."
                 exit 1
               fi
-              echo "Pinging $PAGES_URL"
+              echo "Pinging Supabase API at $SUPABASE_URL"
            env:
-              PAGES_URL: ${{ secrets.PAGES_URL }}
+              SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+              SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
-         - name: Ping deployed pages
+         - name: Ping Supabase Database
            run: |
-              curl --fail --silent --show-error --location "$PAGES_URL" > /dev/null
+              curl --fail --silent --show-error --location "$SUPABASE_URL/rest/v1/base_words?limit=1" \
+                -H "apikey: $SUPABASE_ANON_KEY" \
+                -H "Authorization: Bearer $SUPABASE_ANON_KEY" > /dev/null
            env:
-              PAGES_URL: ${{ secrets.PAGES_URL }}
+              SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+              SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
